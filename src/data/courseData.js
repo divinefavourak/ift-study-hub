@@ -58,6 +58,7 @@ export const NAV_ITEMS = [
       { id: "section-quizzes", short: "SQ", title: "Section Quizzes" },
       { id: "full-quiz", short: "FQ", title: "Full Quiz" },
       { id: "ai-quiz", short: "AI", title: "✦ AI Quiz" },
+      { id: "leaderboard", short: "🏆", title: "Leaderboard" },
     ],
   },
 ];

@@ -407,48 +407,6 @@ const PAGES = {
       </>
     ),
   },
-  lec2: {
-    tag: "Lecture 2",
-    title: "NUMBER SYSTEMS",
-    subtitle: "Binary, octal, decimal and hexadecimal conversions; BCD and Gray code.",
-    body: (
-      <>
-        <div className="split">
-          <article className="content-block">
-            <h4>Number System Bases</h4>
-            <ul>
-              <li>Decimal (base 10): digits 0–9, used in everyday life.</li>
-              <li>Binary (base 2): digits 0–1, native to digital hardware.</li>
-              <li>Octal (base 8): digits 0–7, groups of 3 binary bits.</li>
-              <li>Hexadecimal (base 16): digits 0–9 and A–F, groups of 4 binary bits.</li>
-            </ul>
-          </article>
-          <article className="content-block">
-            <h4>Positional Value</h4>
-            <p>Each digit is weighted by its base raised to its position:</p>
-            <div className="formula">Value = d₀·B⁰ + d₁·B¹ + d₂·B² + …</div>
-            <p>E.g. 1011₂ = 1·8 + 0·4 + 1·2 + 1·1 = 11₁₀</p>
-          </article>
-        </div>
-        <div className="split">
-          <article className="content-block">
-            <h4>Binary ↔ Hex Shortcut</h4>
-            <p>Split binary into 4-bit groups from the right and map each to a hex digit.</p>
-            <div className="formula">1010 1111₂ = AF₁₆</div>
-          </article>
-          <article className="content-block">
-            <h4>Gray Code</h4>
-            <p>Only <strong>one bit changes</strong> between consecutive values. Used in shaft encoders to prevent erroneous multi-bit transitions.</p>
-            <div className="info-box ok">To convert binary to Gray code: XOR each bit with its left neighbour.</div>
-          </article>
-        </div>
-        <article className="content-block">
-          <h4>Binary Coded Decimal (BCD)</h4>
-          <p>Each decimal digit (0–9) is stored as its 4-bit binary equivalent. Codes 1010–1111 are invalid in BCD. Used in 7-segment display driver ICs (e.g. 74LS47/48).</p>
-        </article>
-      </>
-    ),
-  },
   lec3: {
     tag: "Lecture 3",
     title: "BINARY MATH & SIGNED REPRESENTATIONS",

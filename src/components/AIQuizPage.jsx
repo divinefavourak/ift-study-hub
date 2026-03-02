@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { generateQuiz, PROVIDERS } from "../services/aiQuiz";
+import { syncAttempt } from "../services/supabase";
 import QuizPanel from "./QuizPanel";
 
 /* ─── Gemini access code ─────────────────────────────────────── */
@@ -146,7 +147,7 @@ function gradeClass(pct) {
 }
 
 /* ─── Main component ─────────────────────────────────────────── */
-function AIQuizPage({ onSaveScore }) {
+function AIQuizPage({ onSaveScore, user }) {
   const [topic, setTopic]       = useState("lec1");
   const [count, setCount]       = useState(5);
   const [provider, setProvider] = useState("openrouter");
@@ -214,8 +215,20 @@ function AIQuizPage({ onSaveScore }) {
       saveSessions(updated);
       setSessions(updated);
       setActiveSession(completedSession);
+
+      // Sync to Supabase leaderboard if user is signed in
+      if (user?.id) {
+        syncAttempt(user.id, {
+          topicId:    activeSession.topic,
+          topicLabel: activeSession.topicLabel,
+          score:      completedSession.score,
+          total:      activeSession.total,
+          pct,
+          provider,
+        }).catch(console.error);
+      }
     },
-    [activeSession, onSaveScore]
+    [activeSession, onSaveScore, provider, user]
   );
 
   /* ─── Load a past session ─────────────────────────────────── */
