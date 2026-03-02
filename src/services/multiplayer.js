@@ -75,15 +75,19 @@ export function useLobby(user, profile) {
  * Syncs scores, progress, and match state.
  */
 export function useMatch(matchId, user, profile) {
-  const [matchState, setMatchState] = useState('waiting'); // waiting, playing, finished
+  const [matchState, setMatchState] = useState('waiting'); // waiting, generating, playing, finished
   const [opponentInfo, setOpponentInfo] = useState(null);
   const [myScore, setMyScore] = useState({ score: 0, progress: 0 });
   const [opScore, setOpScore] = useState({ score: 0, progress: 0 });
   const [channel, setChannel] = useState(null);
-  const [seed, setSeed] = useState(null); // Seed to determine the exact same questions
+  const [isHost, setIsHost] = useState(false);
+  const [questions, setQuestions] = useState(null);
 
   useEffect(() => {
     if (!matchId || !user) return;
+
+    // The host is the one whose ID is in the matchId (they created it)
+    setIsHost(matchId.includes(user.id));
 
     const matchChannel = supabase.channel(`match-${matchId}`, {
       config: { presence: { key: user.id } }
@@ -94,19 +98,15 @@ export function useMatch(matchId, user, profile) {
         const state = matchChannel.presenceState();
         const players = Object.keys(state);
         
-        // Find opponent
         const opId = players.find(id => id !== user.id);
         if (opId) {
           setOpponentInfo({ id: opId, ...state[opId][0] });
-          // If both are here and we are waiting, start!
-          // We use the matchId string to deterministically generate questions, so no seed strictly needed if we just use math random seeded or pick a fixed set.
-          if (players.length >= 2) {
-             setMatchState('playing');
-             setSeed(matchId);
+          // Both connected → move to 'generating' state (host will generate questions)
+          if (players.length >= 2 && matchState === 'waiting') {
+             setMatchState('generating');
           }
         } else {
-          // Opponent left
-          if (matchState === 'playing') {
+          if (matchState === 'playing' || matchState === 'generating') {
             setMatchState('finished_abandoned');
           }
         }
@@ -115,6 +115,11 @@ export function useMatch(matchId, user, profile) {
         if (payload.userId !== user.id) {
           setOpScore({ score: payload.score, progress: payload.progress });
         }
+      })
+      .on('broadcast', { event: 'match_questions' }, ({ payload }) => {
+        // Both players receive this, set the questions and start playing
+        setQuestions(payload.questions);
+        setMatchState('playing');
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -131,6 +136,20 @@ export function useMatch(matchId, user, profile) {
     };
   }, [matchId, user, profile, matchState]);
 
+  // Host broadcasts the generated questions to both players
+  const broadcastQuestions = (qs) => {
+    if (channel) {
+      channel.send({
+        type: 'broadcast',
+        event: 'match_questions',
+        payload: { questions: qs }
+      });
+    }
+    // Also set locally for the host
+    setQuestions(qs);
+    setMatchState('playing');
+  };
+
   const updateScore = (score, progress) => {
     setMyScore({ score, progress });
     if (channel) {
@@ -142,5 +161,5 @@ export function useMatch(matchId, user, profile) {
     }
   };
 
-  return { matchState, opponentInfo, myScore, opScore, updateScore, seed };
+  return { matchState, opponentInfo, myScore, opScore, updateScore, isHost, questions, broadcastQuestions };
 }

@@ -1,29 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useLobby, useMatch } from "../services/multiplayer";
-import { FULL_QUIZ } from "../data/courseData";
+import { generateQuiz } from "../services/aiQuiz";
 
 const MATCH_LENGTH = 5;
-
-// Deterministic shuffle based on seed string
-function seededShuffle(array, seedStr) {
-  let m = array.length, t, i;
-  let seed = 0;
-  for (let j = 0; j < seedStr.length; j++) seed += seedStr.charCodeAt(j);
-  
-  const random = () => {
-    const x = Math.sin(seed++) * 10000;
-    return x - Math.floor(x);
-  };
-
-  const copy = [...array];
-  while (m) {
-    i = Math.floor(random() * m--);
-    t = copy[m];
-    copy[m] = copy[i];
-    copy[i] = t;
-  }
-  return copy;
-}
 
 const battleStyles = `
 @keyframes battleBounce {
@@ -39,29 +18,43 @@ const battleStyles = `
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes battleSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 .battle-victory { animation: battleBounce 1.5s infinite; color: var(--green); text-shadow: 0 0 40px var(--green); }
 .battle-defeat { animation: battleShake 1s infinite; color: var(--muted); text-shadow: none; filter: grayscale(1); }
 .battle-fade { animation: battleFadeIn 0.5s ease-out forwards; }
+.battle-spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: battleSpin 0.8s linear infinite; margin: 0 auto 16px; }
 `;
+
+// Random topic for variety
+const BATTLE_TOPICS = ["lec1", "lec2", "lec3", "lec4", "lec5", "lec6", "note1", "note2", "note3"];
 
 export default function BattlePage({ user, profile }) {
   const [activeMatchId, setActiveMatchId] = useState(null);
-  const [matchQuestions, setMatchQuestions] = useState([]);
   
   // Lobby State
   const { onlineUsers, incomingChallenge, sendChallenge, clearChallenge } = useLobby(user, profile);
   
   // Match State
-  const { matchState, opponentInfo, myScore, opScore, updateScore, seed } = useMatch(activeMatchId, user, profile);
+  const { matchState, opponentInfo, myScore, opScore, updateScore, isHost, questions, broadcastQuestions } = useMatch(activeMatchId, user, profile);
 
-  // Derive questions once seed is ready
-  useMemo(() => {
-    if (seed) {
-      const allQuestions = [...FULL_QUIZ];
-      const shaken = seededShuffle(allQuestions, seed);
-      setMatchQuestions(shaken.slice(0, MATCH_LENGTH));
+  // When matchState becomes 'generating' and we're the host, generate AI questions
+  useEffect(() => {
+    if (matchState === 'generating' && isHost) {
+      const topic = BATTLE_TOPICS[Math.floor(Math.random() * BATTLE_TOPICS.length)];
+      generateQuiz(topic, MATCH_LENGTH)
+        .then((qs) => {
+          if (qs && qs.length > 0) {
+            broadcastQuestions(qs);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to generate AI questions:', err);
+        });
     }
-  }, [seed]);
+  }, [matchState, isHost]);
 
   const [currentQIndex, setCurrentQIndex] = useState(0);
 
@@ -166,13 +159,28 @@ export default function BattlePage({ user, profile }) {
   // 2. WAITING FOR OPPONENT VIEW
   if (matchState === 'waiting') {
     return (
-      <section className="page active-page flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="lb-spinner mb-4" style={{'--sz': '50px'}} />
-        <h2 className="text-2xl font-bold mb-2">Waiting for connection...</h2>
-        <p className="text-gray-400">Waiting for your opponent to accept the challenge.</p>
-        <button className="action outline mt-8 text-gray-400 border-gray-600" onClick={() => setActiveMatchId(null)}>
+      <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
+        <div className="battle-spinner" />
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Waiting for connection...</h2>
+        <p style={{ color: 'var(--muted)' }}>Waiting for your opponent to accept the challenge.</p>
+        <button className="action outline" style={{ marginTop: '32px', color: 'var(--muted)', borderColor: 'var(--border)' }} onClick={() => setActiveMatchId(null)}>
           Cancel Challenge
         </button>
+      </section>
+    );
+  }
+
+  // 2b. GENERATING AI QUESTIONS VIEW
+  if (matchState === 'generating') {
+    return (
+      <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
+        <div className="battle-spinner" />
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--cyan)' }}>
+          ✨ {isHost ? 'Generating AI Questions...' : 'Opponent is generating questions...'}
+        </h2>
+        <p style={{ color: 'var(--muted)' }}>Gemini is crafting {MATCH_LENGTH} unique questions for this battle.</p>
       </section>
     );
   }
@@ -180,11 +188,12 @@ export default function BattlePage({ user, profile }) {
   // 3. ABANDONED VIEW
   if (matchState === 'finished_abandoned') {
     return (
-      <section className="page active-page flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="text-6xl mb-4">💨</div>
-        <h2 className="text-2xl font-bold mb-2">Opponent Fled!</h2>
-        <p className="text-gray-400">They couldn't handle the heat. You win by forfeit!</p>
-        <button className="action primary mt-8" onClick={() => setActiveMatchId(null)}>
+      <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
+        <div style={{ fontSize: '4rem', marginBottom: '16px' }}>💨</div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Opponent Fled!</h2>
+        <p style={{ color: 'var(--muted)' }}>They couldn't handle the heat. You win by forfeit!</p>
+        <button className="action" style={{ marginTop: '32px', background: 'var(--cyan)', color: 'black' }} onClick={() => setActiveMatchId(null)}>
           Back to Lobby
         </button>
       </section>
@@ -259,16 +268,16 @@ export default function BattlePage({ user, profile }) {
         ) : (
           <div className="current-question" style={{ width: '100%', maxWidth: '600px', textAlign: 'left', background: 'var(--surface-2)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)' }}>
              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--cyan)', marginBottom: '16px', letterSpacing: '2px', textTransform: 'uppercase' }}>Question {currentQIndex + 1}</div>
-             <p style={{ fontSize: '1.25rem', lineHeight: '1.6', marginBottom: '24px', fontWeight: '500', color: 'var(--text)' }}>{matchQuestions[currentQIndex]?.question}</p>
+             <p style={{ fontSize: '1.25rem', lineHeight: '1.6', marginBottom: '24px', fontWeight: '500', color: 'var(--text)' }}>{questions[currentQIndex]?.question}</p>
              <div className="options" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-               {matchQuestions[currentQIndex]?.options.map((opt, i) => (
+               {questions[currentQIndex]?.options.map((opt, i) => (
                  <button 
                   key={i} 
                   className="interactive-card"
                   style={{ textAlign: 'left', padding: '16px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s', color: 'var(--text)', width: '100%' }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--cyan)'; e.currentTarget.style.background = 'rgba(24, 217, 218, 0.1)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
-                  onClick={() => handleAnswer(i === matchQuestions[currentQIndex].correct)}
+                  onClick={() => handleAnswer(i === questions[currentQIndex].correct)}
                  >
                    <span style={{ fontWeight: 'bold', color: 'var(--muted)', marginRight: '12px' }}>{["A", "B", "C", "D"][i]}</span> {opt}
                  </button>
