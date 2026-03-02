@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 
 /**
@@ -76,12 +76,16 @@ export function useLobby(user, profile) {
  */
 export function useMatch(matchId, user, profile) {
   const [matchState, setMatchState] = useState('waiting'); // waiting, generating, playing, finished
+  const matchStateRef = useRef(matchState);
   const [opponentInfo, setOpponentInfo] = useState(null);
   const [myScore, setMyScore] = useState({ score: 0, progress: 0 });
   const [opScore, setOpScore] = useState({ score: 0, progress: 0 });
   const [channel, setChannel] = useState(null);
   const [isHost, setIsHost] = useState(false);
   const [questions, setQuestions] = useState(null);
+
+  // Keep the ref in sync with state
+  useEffect(() => { matchStateRef.current = matchState; }, [matchState]);
 
   useEffect(() => {
     if (!matchId || !user) return;
@@ -102,11 +106,12 @@ export function useMatch(matchId, user, profile) {
         if (opId) {
           setOpponentInfo({ id: opId, ...state[opId][0] });
           // Both connected → move to 'generating' state (host will generate questions)
-          if (players.length >= 2 && matchState === 'waiting') {
+          if (players.length >= 2 && matchStateRef.current === 'waiting') {
              setMatchState('generating');
           }
         } else {
-          if (matchState === 'playing' || matchState === 'generating') {
+          // Only mark abandoned if we were actively playing, not during initial sync
+          if (matchStateRef.current === 'playing') {
             setMatchState('finished_abandoned');
           }
         }
@@ -134,7 +139,7 @@ export function useMatch(matchId, user, profile) {
     return () => {
       supabase.removeChannel(matchChannel);
     };
-  }, [matchId, user, profile, matchState]);
+  }, [matchId, user, profile]);
 
   // Host broadcasts the generated questions to both players
   const broadcastQuestions = (qs) => {
