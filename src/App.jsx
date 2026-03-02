@@ -90,6 +90,14 @@ function App() {
     return Math.round((visitedPages.size / PAGE_IDS.length) * 100);
   }, [visitedPages]);
 
+  // ── Quick quiz from topic page ────────────────────────────────
+  const [defaultTopic, setDefaultTopic] = useState(null);
+
+  function handleQuickQuiz(topicId) {
+    setDefaultTopic(topicId);
+    navigate("ai-quiz");
+  }
+
   function saveScore(scoreKey, scorePct) {
     setScoreBook((prev) => {
       const best = Math.max(prev[scoreKey] || 0, scorePct);
@@ -116,11 +124,11 @@ function App() {
     if (activePage === "flashcards")       return <FlashcardsPage />;
     if (activePage === "section-quizzes")  return <SectionQuizzesPage onSaveScore={saveScore} user={session?.user} />;
     if (activePage === "full-quiz")        return <FullQuizPage onSaveScore={saveScore} user={session?.user} />;
-    if (activePage === "ai-quiz")          return <AIQuizPage onSaveScore={saveScore} user={session?.user} />;
+    if (activePage === "ai-quiz")          return <AIQuizPage onSaveScore={saveScore} user={session?.user} defaultTopic={defaultTopic} />;
     if (activePage === "glossary")         return <GlossaryPage />;
     if (activePage === "leaderboard")      return <LeaderboardPage user={session?.user} profile={profile} />;
     if (activePage.startsWith("lec") || activePage.startsWith("note"))
-                                           return <TopicPage pageId={activePage} />;
+                                           return <TopicPage pageId={activePage} onNavigate={navigate} onQuickQuiz={handleQuickQuiz} />;
     return <HomePage onNavigate={navigate} scoreBook={scoreBook} />;
   }
 

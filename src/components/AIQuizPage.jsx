@@ -147,8 +147,8 @@ function gradeClass(pct) {
 }
 
 /* ─── Main component ─────────────────────────────────────────── */
-function AIQuizPage({ onSaveScore, user }) {
-  const [topic, setTopic]       = useState("lec1");
+function AIQuizPage({ onSaveScore, user, defaultTopic }) {
+  const [topic, setTopic]       = useState(defaultTopic ?? "lec1");
   const [count, setCount]       = useState(5);
   const [provider, setProvider] = useState("openrouter");
   const [geminiUnlocked, setGeminiUnlocked] = useState(isGeminiUnlocked);

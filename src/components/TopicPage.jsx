@@ -1,4 +1,12 @@
 import Term from "./Term";
+import { NAV_ITEMS } from "../data/courseData";
+
+// Flat ordered list of topic page IDs (lec* and note*)
+const TOPIC_IDS = NAV_ITEMS
+  .flatMap((g) => g.items)
+  .filter((item) => item.id.startsWith("lec") || item.id.startsWith("note"))
+  .map((item) => ({ id: item.id, title: item.title }));
+
 
 const PAGES = {
   lec1: {
@@ -1221,12 +1229,16 @@ const PAGES = {
   },
 };
 
-function TopicPage({ pageId }) {
+function TopicPage({ pageId, onNavigate, onQuickQuiz }) {
   const page = PAGES[pageId];
 
-  if (!page) {
-    return null;
-  }
+  if (!page) return null;
+
+  const currentIdx = TOPIC_IDS.findIndex((t) => t.id === pageId);
+  const nextTopic  = currentIdx >= 0 && currentIdx < TOPIC_IDS.length - 1
+    ? TOPIC_IDS[currentIdx + 1]
+    : null;
+  const prevTopic  = currentIdx > 0 ? TOPIC_IDS[currentIdx - 1] : null;
 
   return (
     <section className="page active-page">
@@ -1235,7 +1247,41 @@ function TopicPage({ pageId }) {
         <h3>{page.title}</h3>
         <p>{page.subtitle}</p>
       </div>
+
       {page.body}
+
+      {/* ── Bottom action bar ──────────────────────────────── */}
+      <div className="topic-action-bar">
+        <div className="topic-action-left">
+          {prevTopic && (
+            <button
+              className="topic-nav-btn prev"
+              onClick={() => onNavigate?.(prevTopic.id)}
+            >
+              ← {prevTopic.title}
+            </button>
+          )}
+        </div>
+        <div className="topic-action-center">
+          <button
+            className="topic-quiz-btn"
+            onClick={() => onQuickQuiz?.(pageId)}
+            title="Generate a quick AI quiz on this topic"
+          >
+            ⚡ Quick Quiz
+          </button>
+        </div>
+        <div className="topic-action-right">
+          {nextTopic && (
+            <button
+              className="topic-nav-btn next"
+              onClick={() => onNavigate?.(nextTopic.id)}
+            >
+              {nextTopic.title} →
+            </button>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
