@@ -1,8 +1,16 @@
+import { useState } from "react";
 import { NAV_ITEMS } from "../data/courseData";
 
 function Sidebar({ activePage, onNavigate, progressPct }) {
-  return (
-    <aside className="sidebar">
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  function handleNav(id) {
+    onNavigate(id);
+    setMobileOpen(false); // close drawer on mobile after picking
+  }
+
+  const navContent = (
+    <>
       <div className="brand">
         <div className="brand-code">IFT 211</div>
         <h1>
@@ -21,7 +29,7 @@ function Sidebar({ activePage, onNavigate, progressPct }) {
               <button
                 key={item.id}
                 className={`nav-item ${activePage === item.id ? "active" : ""}`}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => handleNav(item.id)}
               >
                 <span className="nav-dot">{item.short}</span>
                 <span>{item.title}</span>
@@ -40,9 +48,43 @@ function Sidebar({ activePage, onNavigate, progressPct }) {
           <div className="progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ── Desktop sidebar ───────────────────────────────── */}
+      <aside className="sidebar">{navContent}</aside>
+
+      {/* ── Mobile top bar ────────────────────────────────── */}
+      <header className="mobile-header">
+        <div className="mobile-brand">
+          <span className="mobile-brand-code">IFT 211</span>
+          <span className="mobile-brand-title">DIGITAL LOGIC</span>
+        </div>
+        <button
+          className={`hamburger ${mobileOpen ? "open" : ""}`}
+          onClick={() => setMobileOpen((v) => !v)}
+          aria-label="Toggle navigation"
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </header>
+
+      {/* ── Mobile drawer overlay ─────────────────────────── */}
+      {mobileOpen && (
+        <div
+          className="mobile-overlay"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+      <aside className={`mobile-drawer ${mobileOpen ? "open" : ""}`}>
+        {navContent}
+      </aside>
+    </>
   );
 }
 
 export default Sidebar;
-

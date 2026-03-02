@@ -1,43 +1,20 @@
 /**
- * aiQuiz.js — AI quiz generation
+ * api/generate-quiz.js
+ * Vercel Serverless Function — server-side proxy for quiz generation.
  *
- * In PRODUCTION (Vercel):
- *   → Calls /api/generate-quiz  (serverless function, keys stay server-side)
+ * In production the browser calls this endpoint instead of Gemini/OpenRouter 
+ * directly, so API keys NEVER appear in the client bundle.
  *
- * In LOCAL DEV (npm run dev):
- *   → Calls Gemini/OpenRouter directly using VITE_ keys from .env
- *     (your own machine, never deployed, acceptable)
+ * Env vars needed in Vercel dashboard (NO VITE_ prefix = never exposed to browser):
+ *   GEMINI_API_KEY       — Google Gemini API key
+ *   OPENROUTER_API_KEY   — OpenRouter API key
  */
-
-const IS_PROD = import.meta.env.PROD;               // true on Vercel, false locally
-const IS_DEV  = import.meta.env.DEV;
-
-// Dev-only direct keys (only loaded locally, stripped from production bundle)
-const DEV_GEMINI_KEY     = IS_DEV ? import.meta.env.VITE_GEMINI_API_KEY     : "";
-const DEV_OPENROUTER_KEY = IS_DEV ? import.meta.env.VITE_OPENROUTER_API_KEY : "";
 
 const GEMINI_URL = (key) =>
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-/* ─── Provider metadata (used by the UI) ─────────────────── */
-export const PROVIDERS = [
-  {
-    id: "openrouter",
-    label: "✦ Free (OpenRouter)",
-    sublabel: "stepfun/step-3.5-flash:free",
-    free: true,
-  },
-  {
-    id: "gemini",
-    label: "Gemini 2.5 Flash",
-    sublabel: "Google — may hit quota",
-    free: false,
-  },
-];
-
-/* ─── Topic descriptions ──────────────────────────────────── */
 const TOPIC_MAP = {
   lec1: "Digital Foundations: analog vs digital signals, ADC/DAC, frequency, period, duty cycle",
   lec2: "Number Systems: binary, hexadecimal, octal, BCD, Gray code, positional notation and conversion",
@@ -60,13 +37,12 @@ const TOPIC_MAP = {
   note3: "Binary Subtractors & Comparators: half/full subtractor, 2's complement subtraction, identity vs magnitude comparator, BCD-to-7-segment decoder",
 };
 
-/* ─── Shared prompt builder ───────────────────────────────── */
 function buildPrompt(topicId, count) {
-  const label = TOPIC_MAP[topicId] ?? topicId;
+  const topicLabel = TOPIC_MAP[topicId] ?? topicId;
   return `You are an expert digital logic and computer engineering professor.
 
 Generate exactly ${count} rigorous, exam-style multiple-choice questions on:
-"${label}"
+"${topicLabel}"
 
 Requirements:
 - Test understanding and application, not just recall.
@@ -104,29 +80,13 @@ function parseQuestions(rawText, topicId) {
     .replace(/```\s*/gi, "")
     .trim();
   const parsed = JSON.parse(cleaned);
-  if (!Array.isArray(parsed)) throw new Error("Unexpected non-array response from AI");
+  if (!Array.isArray(parsed)) throw new Error("Response is not a JSON array");
   return parsed.map((q) => ({ ...q, module: topicId }));
 }
 
-/* ─── PRODUCTION: call via serverless proxy ───────────────── */
-async function generateViaProxy(topicId, count, provider) {
-  const res = await fetch("/api/generate-quiz", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ topicId, count, provider }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error ?? res.statusText);
-  }
-  const { questions } = await res.json();
-  return questions;
-}
-
-/* ─── DEV: direct Gemini call (uses local .env key) ──────── */
-async function generateViaGeminiDirect(topicId, count) {
+async function callGemini(topicId, count, apiKey) {
   const prompt = buildPrompt(topicId, count);
-  const res = await fetch(GEMINI_URL(DEV_GEMINI_KEY), {
+  const res = await fetch(GEMINI_URL(apiKey), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -140,15 +100,14 @@ async function generateViaGeminiDirect(topicId, count) {
   return parseQuestions(raw, topicId);
 }
 
-/* ─── DEV: direct OpenRouter call (uses local .env key) ───── */
-async function generateViaOpenRouterDirect(topicId, count) {
+async function callOpenRouter(topicId, count, apiKey) {
   const prompt = buildPrompt(topicId, count);
   const res = await fetch(OPENROUTER_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${DEV_OPENROUTER_KEY}`,
-      "HTTP-Referer": "http://localhost:5173",
+      Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://ift211-study-hub.vercel.app",
       "X-Title": "IFT 211 Study Hub",
     },
     body: JSON.stringify({
@@ -163,22 +122,34 @@ async function generateViaOpenRouterDirect(topicId, count) {
   return parseQuestions(raw, topicId);
 }
 
-/* ─── Public API ──────────────────────────────────────────── */
-/**
- * Generate quiz questions.
- * @param {string} topicId   - Course topic ID (e.g. "lec1", "lec7-kmap")
- * @param {number} count     - Number of questions (default 5)
- * @param {string} provider  - "gemini" | "openrouter" (default "openrouter")
- */
-export async function generateQuiz(topicId, count = 5, provider = "openrouter") {
-  if (IS_PROD) {
-    // Production: all calls go through the serverless proxy (keys never in bundle)
-    return generateViaProxy(topicId, count, provider);
+export default async function handler(req, res) {
+  // Only allow POST
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Local dev: call directly using VITE_ keys from .env
-  if (provider === "gemini") {
-    return generateViaGeminiDirect(topicId, count);
+  const { topicId, count = 5, provider = "openrouter" } = req.body;
+
+  if (!topicId) {
+    return res.status(400).json({ error: "Missing topicId" });
   }
-  return generateViaOpenRouterDirect(topicId, count);
+
+  try {
+    let questions;
+
+    if (provider === "gemini") {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY not configured on server" });
+      questions = await callGemini(topicId, count, apiKey);
+    } else {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "OPENROUTER_API_KEY not configured on server" });
+      questions = await callOpenRouter(topicId, count, apiKey);
+    }
+
+    return res.status(200).json({ questions });
+  } catch (err) {
+    console.error("[generate-quiz]", err.message);
+    return res.status(500).json({ error: err.message });
+  }
 }
