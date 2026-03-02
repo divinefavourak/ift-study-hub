@@ -9,6 +9,7 @@ import SectionQuizzesPage from "./components/SectionQuizzesPage";
 import FullQuizPage from "./components/FullQuizPage";
 import GlossaryPage from "./components/GlossaryPage";
 import AIQuizPage from "./components/AIQuizPage";
+import SplashScreen from "./components/SplashScreen";
 import { PAGE_IDS } from "./data/courseData";
 
 const STORAGE_KEYS = {
@@ -17,6 +18,10 @@ const STORAGE_KEYS = {
 };
 
 function App() {
+  // Show splash once per browser session
+  const [showSplash, setShowSplash] = useState(
+    () => !sessionStorage.getItem("ift211_splash_seen")
+  );
   const [activePage, setActivePage] = useState("home");
   const [visitedPages, setVisitedPages] = useState(() => {
     try {
@@ -101,6 +106,14 @@ function App() {
 
   return (
     <div className="app-shell">
+      {showSplash && (
+        <SplashScreen
+          onDone={() => {
+            sessionStorage.setItem("ift211_splash_seen", "1");
+            setShowSplash(false);
+          }}
+        />
+      )}
       <Sidebar
         activePage={activePage}
         onNavigate={navigate}

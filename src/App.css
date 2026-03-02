@@ -1958,3 +1958,426 @@ body {
     padding: 18px 16px;
   }
 }
+
+/* ============================================================
+   SPLASH SCREEN
+   ============================================================ */
+
+.splash-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #060810;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.splash-root.splash-exit {
+  animation: splashOut 0.65s cubic-bezier(0.7, 0, 1, 1) forwards;
+}
+
+@keyframes splashOut {
+  0%   { opacity: 1; transform: scale(1); }
+  60%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1.08); pointer-events: none; }
+}
+
+/* ── Circuit grid SVG ─────────────────────────────────────── */
+.splash-grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.splash-grid.visible {
+  opacity: 1;
+}
+
+/* ── Scan line ────────────────────────────────────────────── */
+.splash-scan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--blue) 30%,
+    rgba(0,214,255,0.8) 50%,
+    var(--blue) 70%,
+    transparent 100%
+  );
+  box-shadow: 0 0 20px rgba(0,214,255,0.6), 0 0 60px rgba(0,214,255,0.2);
+  animation: scanLine 1.2s ease-in-out forwards;
+}
+
+@keyframes scanLine {
+  0%   { top: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── Particles ────────────────────────────────────────────── */
+.splash-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.splash-particle {
+  position: absolute;
+  bottom: -8px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--blue);
+  animation: splashParticle linear infinite;
+}
+
+.splash-particle:nth-child(odd)  { background: var(--cyan); }
+.splash-particle:nth-child(3n)   { background: #a78bfa; width: 3px; height: 3px; }
+.splash-particle:nth-child(5n)   { background: var(--orange); }
+
+@keyframes splashParticle {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.4; }
+  100% { opacity: 0; transform: translateY(-100vh) scale(1.2); }
+}
+
+/* ── Main content ─────────────────────────────────────────── */
+.splash-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+}
+
+/* ── Hex ring logo ────────────────────────────────────────── */
+.splash-hex-ring {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: linear-gradient(#060810, #060810) padding-box,
+              linear-gradient(135deg, var(--blue), #a78bfa, var(--cyan)) border-box;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.6) rotate(-30deg);
+  transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 40px rgba(0,214,255,0.3), 0 0 80px rgba(124,58,237,0.15);
+  animation: hexPulse 3s ease-in-out 1s infinite;
+}
+
+.splash-hex-ring.visible {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+@keyframes hexPulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(0,214,255,0.3), 0 0 80px rgba(124,58,237,0.15); }
+  50%       { box-shadow: 0 0 60px rgba(0,214,255,0.5), 0 0 120px rgba(124,58,237,0.3); }
+}
+
+.splash-hex-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.splash-hex-code {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--blue);
+}
+
+.splash-hex-num {
+  font-family: var(--display);
+  font-size: 36px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--blue), #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Glitch title ─────────────────────────────────────────── */
+.splash-title {
+  font-family: var(--display);
+  font-size: clamp(36px, 6vw, 72px);
+  letter-spacing: 3px;
+  line-height: 0.9;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  background: linear-gradient(135deg, #fff 20%, var(--blue) 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.splash-title.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.splash-title-2 {
+  background: linear-gradient(135deg, var(--cyan) 0%, #a78bfa 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Subtitle ─────────────────────────────────────────────── */
+.splash-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.5s ease 0.1s;
+}
+
+.splash-sub.visible {
+  opacity: 1;
+}
+
+/* ── Loading bar ──────────────────────────────────────────── */
+.splash-bar-wrap {
+  width: min(340px, 80vw);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.splash-bar-wrap.visible {
+  opacity: 1;
+}
+
+.splash-bar-track {
+  height: 3px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.splash-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, var(--blue), var(--cyan));
+  border-radius: 999px;
+  transition: width 0.06s linear;
+  box-shadow: 0 0 12px rgba(0,214,255,0.5);
+}
+
+.splash-bar-pct {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--blue);
+  text-align: center;
+}
+
+/* ── Corner decorators ────────────────────────────────────── */
+.splash-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.splash-corner.visible { opacity: 1; }
+
+.splash-corner-tl { top: 20px; left: 20px;
+  border-top: 2px solid var(--blue); border-left: 2px solid var(--blue); }
+.splash-corner-tr { top: 20px; right: 20px;
+  border-top: 2px solid var(--blue); border-right: 2px solid var(--blue); }
+.splash-corner-bl { bottom: 20px; left: 20px;
+  border-bottom: 2px solid var(--blue); border-left: 2px solid var(--blue); }
+.splash-corner-br { bottom: 20px; right: 20px;
+  border-bottom: 2px solid var(--blue); border-right: 2px solid var(--blue); }
+
+/* ============================================================
+   GEMINI ACCESS LOCK MODAL
+   ============================================================ */
+
+.gem-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: overlayFadeIn 0.2s ease;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.gem-lock-modal {
+  background: linear-gradient(145deg, #111624, #0d1220);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.2);
+  animation: modalIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.92) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.gem-lock-modal.shake {
+  animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-3px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60% { transform: translateX(5px); }
+}
+
+.gem-lock-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  display: block;
+  animation: lockBounce 0.6s ease;
+}
+
+@keyframes lockBounce {
+  0%   { transform: scale(0.5) rotate(-20deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.gem-lock-title {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.gem-lock-desc {
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.gem-lock-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 1rem;
+  letter-spacing: 3px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 8px;
+}
+
+.gem-lock-input:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+}
+
+.gem-lock-error {
+  color: #f87171;
+  font-size: 0.78rem;
+  margin-bottom: 12px;
+  font-family: var(--mono);
+}
+
+.gem-lock-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.gem-lock-btn {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.gem-lock-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.gem-lock-btn.cancel {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.gem-lock-btn.unlock {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+}
+
+.gem-lock-hint {
+  margin-top: 16px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.gem-lock-hint strong {
+  color: var(--cyan);
+}
+
+/* Lock badge on provider pill */
+.lock-tag {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 0 9px 0 7px;
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.3);
+}
+
+.provider-pill.locked {
+  opacity: 0.7;
+}
+
+.provider-pill.locked:hover {
+  border-color: rgba(239,68,68,0.4);
+  opacity: 1;
+}

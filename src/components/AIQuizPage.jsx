@@ -1,6 +1,80 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { generateQuiz, PROVIDERS } from "../services/aiQuiz";
 import QuizPanel from "./QuizPanel";
+
+/* ─── Gemini access code ─────────────────────────────────────── */
+// Set VITE_GEMINI_ACCESS_CODE in your .env to customise the code.
+// Default access code: IFT211
+const GEMINI_ACCESS_CODE =
+  import.meta.env.VITE_GEMINI_ACCESS_CODE ?? "WUNMI";
+const GEMINI_LOCK_KEY = "ift211_gemini_unlocked";
+
+function isGeminiUnlocked() {
+  return sessionStorage.getItem(GEMINI_LOCK_KEY) === "1";
+}
+
+/* ─── Gemini lock modal ─────────────────────────────────────── */
+function GeminiLockModal({ onUnlock, onClose }) {
+  const [code, setCode] = useState("");
+  const [shake, setShake] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef(null);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (code.trim().toUpperCase() === GEMINI_ACCESS_CODE.toUpperCase()) {
+      sessionStorage.setItem(GEMINI_LOCK_KEY, "1");
+      onUnlock();
+    } else {
+      setShake(true);
+      setError("Incorrect access code.");
+      setCode("");
+      setTimeout(() => setShake(false), 500);
+      inputRef.current?.focus();
+    }
+  }
+
+  return (
+    <div className="gem-lock-overlay" onClick={onClose}>
+      <div
+        className={`gem-lock-modal ${shake ? "shake" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="gem-lock-icon">🔒</div>
+        <h3 className="gem-lock-title">Gemini Access Required</h3>
+        <p className="gem-lock-desc">
+          This model uses your Google Gemini quota. Enter the access code to
+          unlock it for this session.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <input
+            ref={inputRef}
+            className="gem-lock-input"
+            type="password"
+            placeholder="Access code…"
+            value={code}
+            onChange={(e) => { setCode(e.target.value); setError(""); }}
+            autoFocus
+            autoComplete="off"
+          />
+          {error && <p className="gem-lock-error">{error}</p>}
+          <div className="gem-lock-actions">
+            <button type="button" className="gem-lock-btn cancel" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="gem-lock-btn unlock">
+              🔓 Unlock
+            </button>
+          </div>
+        </form>
+        <p className="gem-lock-hint">
+          💡 Use the <strong>✦ Free (OpenRouter)</strong> option for unlimited
+          questions at no cost.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 /* ─── Constants ─────────────────────────────────────────────── */
 const STORAGE_KEY = "ift211_ai_sessions";
@@ -75,7 +149,9 @@ function gradeClass(pct) {
 function AIQuizPage({ onSaveScore }) {
   const [topic, setTopic]       = useState("lec1");
   const [count, setCount]       = useState(5);
-  const [provider, setProvider] = useState("openrouter"); // default: free
+  const [provider, setProvider] = useState("openrouter");
+  const [geminiUnlocked, setGeminiUnlocked] = useState(isGeminiUnlocked);
+  const [showGeminiLock, setShowGeminiLock] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
 
@@ -188,10 +264,19 @@ function AIQuizPage({ onSaveScore }) {
             {PROVIDERS.map((p) => (
               <button
                 key={p.id}
-                className={`provider-pill ${provider === p.id ? "active" : ""} ${p.free ? "free" : ""}`}
-                onClick={() => setProvider(p.id)}
+                className={`provider-pill ${provider === p.id ? "active" : ""} ${p.free ? "free" : ""} ${p.id === "gemini" && !geminiUnlocked ? "locked" : ""}`}
+                onClick={() => {
+                  if (p.id === "gemini" && !geminiUnlocked) {
+                    setShowGeminiLock(true);
+                  } else {
+                    setProvider(p.id);
+                  }
+                }}
               >
                 {p.free && <span className="free-tag">FREE</span>}
+                {p.id === "gemini" && !geminiUnlocked && (
+                  <span className="lock-tag">🔒</span>
+                )}
                 <span className="provider-name">{p.label}</span>
                 <span className="provider-sub">{p.sublabel}</span>
               </button>
@@ -346,6 +431,16 @@ function AIQuizPage({ onSaveScore }) {
             ))}
           </div>
         </div>
+      )}
+      {showGeminiLock && (
+        <GeminiLockModal
+          onUnlock={() => {
+            setGeminiUnlocked(true);
+            setProvider("gemini");
+            setShowGeminiLock(false);
+          }}
+          onClose={() => setShowGeminiLock(false)}
+        />
       )}
     </section>
   );
