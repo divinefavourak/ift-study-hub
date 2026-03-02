@@ -36,12 +36,8 @@ function App() {
   const [needUsername, setNeedUsername] = useState(false);
 
   useEffect(() => {
-    getSession().then(async (s) => {
-      setSession(s);
-      if (s?.user) await resolveProfile(s.user);
-      setAuthLoading(false);
-    });
-
+    // Use onAuthStateChange as the single source of truth.
+    // Supabase fires this once on mount with the restored session (or null).
     const unsub = onAuthChange(async (s) => {
       setSession(s);
       if (s?.user) {
@@ -50,6 +46,7 @@ function App() {
         setProfile(null);
         setNeedUsername(false);
       }
+      setAuthLoading(false);
     });
     return unsub;
   }, []);
