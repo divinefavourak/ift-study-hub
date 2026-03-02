@@ -183,7 +183,7 @@ function App() {
         user={session?.user}
         profile={profile}
         onSignInClick={() => setShowAuth(true)}
-        onSignOut={async () => { await signOut(); setSession(null); setProfile(null); }}
+        onSignOut={() => { setSession(null); setProfile(null); setActivePage("home"); }}
       />
 
       <main className="main-panel">{renderPage()}</main>
