@@ -33,7 +33,7 @@ body {
 
 .sidebar {
   width: 286px;
-  min-height: 100vh;
+  height: 100vh;
   border-right: 1px solid var(--border);
   background: rgba(17, 22, 36, 0.97);
   display: flex;
@@ -3149,4 +3149,76 @@ body {
   .topic-nav-btn { max-width: 100%; width: 100%; justify-content: center; text-align: center; }
   .topic-nav-btn.next { text-align: center; }
   .topic-quiz-btn { width: 100%; justify-content: center; }
+}
+
+/* ============================================================
+   GAMIFICATION BADGES
+   ============================================================ */
+
+.sidebar-user-badges {
+  display: flex;
+  gap: 4px;
+  font-size: 1.1rem;
+  margin-top: 4px;
+}
+
+.lb-podium-badges {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 1.25rem;
+  background: rgba(255,255,255,0.05);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.lb-table-badges {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 1.25rem;
+}
+
+/* ============================================================
+   PRINT AND PDF CHEATSHEET STYLES
+   ============================================================ */
+@media print {
+  /* Hide the rest of the application completely when printing */
+  .sidebar, .mobile-header, .app-shell > aside, .hide-on-print {
+    display: none !important;
+  }
+  
+  /* Reset background and text colors to save ink and look proper on paper */
+  body, .app-shell, .main-content, .cheatsheet-page {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+  
+  /* Remove scrollbars and absolute positioning that ruins prints */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .print-target {
+    width: 100% !important;
+    padding: 0.5cm !important;
+  }
+
+  /* Tailwind CSS print utilities polyfill */
+  .break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Override any dark-mode specific variable overrides */
+  :root {
+    --text: #000000;
+    --text-muted: #444444;
+  }
 }

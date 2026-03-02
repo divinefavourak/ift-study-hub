@@ -140,6 +140,69 @@ async function generateViaGeminiDirect(topicId, count) {
   return parseQuestions(raw, topicId);
 }
 
+/* ─── Explain Question (DEV and PROD) ─────────────────────── */
+function buildExplainPrompt(questionObj, wrongAnswerIndex) {
+  const { question, options, correct } = questionObj;
+  return `You are an expert digital logic professor. A student missed a question.
+QUESTION: ${question}
+OPTIONS: A) ${options[0]}  B) ${options[1]}  C) ${options[2]}  D) ${options[3]}
+CORRECT: ${options[correct]}
+THEY SELECTED: ${options[wrongAnswerIndex]}
+
+Please explicitly explain why their answer was incorrect, and why the actual correct answer is right. Output only the explanation using clear markdown formatting. break it down step-by-step.`;
+}
+
+async function explainViaProxy(questionObj, wrongAnswerIndex, provider) {
+  const res = await fetch("/api/explain-question", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ questionObj, wrongAnswerIndex, provider }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error ?? res.statusText);
+  }
+  const { explanation } = await res.json();
+  return explanation;
+}
+
+async function explainViaGeminiDirect(questionObj, wrongAnswerIndex) {
+  const prompt = buildExplainPrompt(questionObj, wrongAnswerIndex);
+  const res = await fetch(GEMINI_URL(DEV_GEMINI_KEY), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7 },
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "No explanation generated.";
+}
+
+async function explainViaOpenRouterDirect(questionObj, wrongAnswerIndex) {
+  const prompt = buildExplainPrompt(questionObj, wrongAnswerIndex);
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${DEV_OPENROUTER_KEY}`,
+      "HTTP-Referer": "http://localhost:5173",
+      "X-Title": "IFT 211 Study Hub",
+    },
+    body: JSON.stringify({
+      model: "stepfun/step-3.5-flash:free",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? "No explanation generated.";
+}
+
+
 /* ─── DEV: direct OpenRouter call (uses local .env key) ───── */
 async function generateViaOpenRouterDirect(topicId, count) {
   const prompt = buildPrompt(topicId, count);
@@ -181,4 +244,20 @@ export async function generateQuiz(topicId, count = 5, provider = "openrouter") 
     return generateViaGeminiDirect(topicId, count);
   }
   return generateViaOpenRouterDirect(topicId, count);
+}
+
+/**
+ * Get an AI explanation for a missed question.
+ * @param {object} questionObj - The question object containing question, options, correct index
+ * @param {number} wrongAnswerIndex - The index the user guessed incorrectly
+ * @param {string} provider - "gemini" | "openrouter"
+ */
+export async function explainQuestion(questionObj, wrongAnswerIndex, provider = "openrouter") {
+  if (IS_PROD) {
+    return explainViaProxy(questionObj, wrongAnswerIndex, provider);
+  }
+  if (provider === "gemini") {
+    return explainViaGeminiDirect(questionObj, wrongAnswerIndex);
+  }
+  return explainViaOpenRouterDirect(questionObj, wrongAnswerIndex);
 }

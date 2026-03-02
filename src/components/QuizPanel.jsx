@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { marked } from "marked";
+import { explainQuestion } from "../services/aiQuiz";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -15,7 +17,7 @@ function moduleLabel(module) {
   return module;
 }
 
-function QuizPanel({ questions, quizKey, onScoreSaved }) {
+function QuizPanel({ questions, quizKey, onScoreSaved, provider = "openrouter" }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [hasSubmittedCurrent, setHasSubmittedCurrent] = useState(false);
@@ -23,6 +25,11 @@ function QuizPanel({ questions, quizKey, onScoreSaved }) {
   const [showResults, setShowResults] = useState(false);
   // Track user's answer for each question (null = not answered yet)
   const [userAnswers, setUserAnswers] = useState(() => Array(questions.length).fill(null));
+
+  // AI Explanation State
+  const [explanation, setExplanation] = useState(null);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explainError, setExplainError] = useState(null);
 
   const total = questions.length;
 
@@ -55,15 +62,13 @@ function QuizPanel({ questions, quizKey, onScoreSaved }) {
       setCurrentIdx((idx) => idx + 1);
       setSelectedOption(null);
       setHasSubmittedCurrent(false);
+      setExplanation(null);
+      setExplainError(null);
+      setIsExplaining(false);
     } else {
       setShowResults(true);
-      const lastCorrect = selectedOption === questions[currentIdx].correct ? 1 : 0;
-      const finalScore = score + lastCorrect;
-      const pct = Math.round((finalScore / total) * 100);
-      // Build final answers array including last answer
-      const finalAnswers = [...userAnswers];
-      finalAnswers[currentIdx] = selectedOption;
-      onScoreSaved(quizKey, pct, finalAnswers);
+      const pct = Math.round((score / total) * 100);
+      onScoreSaved(quizKey, pct, userAnswers);
     }
   }
 
@@ -73,6 +78,24 @@ function QuizPanel({ questions, quizKey, onScoreSaved }) {
     setHasSubmittedCurrent(false);
     setScore(0);
     setShowResults(false);
+    setExplanation(null);
+    setExplainError(null);
+    setIsExplaining(false);
+  }
+
+  async function handleExplain() {
+    if (isExplaining || explanation) return;
+    setIsExplaining(true);
+    setExplainError(null);
+    try {
+      const q = questions[currentIdx];
+      const raw = await explainQuestion(q, selectedOption, provider);
+      setExplanation(raw);
+    } catch (err) {
+      setExplainError(err.message || "Failed to explain.");
+    } finally {
+      setIsExplaining(false);
+    }
   }
 
   if (showResults) {
@@ -149,6 +172,38 @@ function QuizPanel({ questions, quizKey, onScoreSaved }) {
           <div className={`interactive-feedback ${correct ? "ok" : "bad"}`}>
             <strong>{correct ? "Correct!" : "Incorrect."}</strong>{" "}
             <span className="feedback-text">{q.feedback[selectedOption]}</span>
+            
+            {/* AI Explanation UI */}
+            {!correct && (
+              <div className="explanation-section" style={{ marginTop: "1rem" }}>
+                {!explanation && !isExplaining && !explainError && (
+                  <button className="action outline small" onClick={handleExplain}>
+                    ✦ Explain this to me
+                  </button>
+                )}
+                {isExplaining && (
+                  <span className="explaining-text" style={{ fontSize: "0.9rem", color: "var(--cyan)" }}>
+                    <div className="lb-spinner" style={{"--sz":"14px", display: "inline-block", marginRight: "6px"}}/>
+                     Analyzing your answer...
+                  </span>
+                )}
+                {explainError && (
+                  <div className="error-text" style={{ fontSize: "0.9rem", color: "var(--red)" }}>
+                    Failed to explain: {explainError}
+                  </div>
+                )}
+                {explanation && (
+                  <div 
+                    className="explanation-content markdown-body" 
+                    style={{
+                      background: "rgba(0,0,0,0.15)", padding: "12px", borderRadius: "8px", 
+                      marginTop: "8px", fontSize: "0.9rem", borderLeft: "3px solid var(--cyan)"
+                    }}
+                    dangerouslySetInnerHTML={{ __html: marked.parse(explanation) }} 
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
       </article>

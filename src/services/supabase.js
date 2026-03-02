@@ -75,11 +75,20 @@ export async function createProfile(userId, { username, fullName, avatarUrl }) {
   });
 }
 
-/* ─── Quiz attempt syncing ──────────────────────────────────────── */
+export const BADGE_DEFS = {
+  first_blood:  { id: "first_blood",  icon: "🩸", title: "First Blood",  desc: "Completed your first AI quiz." },
+  sharpshooter: { id: "sharpshooter", icon: "🎯", title: "Sharpshooter", desc: "Scored a perfect 100% on a quiz." },
+  survivor:     { id: "survivor",     icon: "🛡️", title: "Survivor",     desc: "Passed a quiz with exactly 50%." },
+  grinder:      { id: "grinder",      icon: "⚙️", title: "Grinder",      desc: "Completed 5 or more quizzes." },
+};
+
+/* ─── Quiz attempt syncing & badges ─────────────────────────────── */
 
 export async function syncAttempt(userId, attempt) {
   if (!supabase) return { error: { message: "Supabase not configured." } };
-  return supabase.from("quiz_attempts").insert({
+
+  // 1. Insert the attempt
+  const { error } = await supabase.from("quiz_attempts").insert({
     user_id: userId,
     topic_id: attempt.topicId,
     topic_label: attempt.topicLabel,
@@ -88,6 +97,60 @@ export async function syncAttempt(userId, attempt) {
     pct: attempt.pct,
     provider: attempt.provider ?? "openrouter",
   });
+  if (error) return { error };
+
+  // 2. Evaluate Badges (Fire & Forget)
+  try {
+    const { data: profile } = await supabase.from("profiles").select("badges").eq("id", userId).single();
+    if (profile) {
+      const currentBadges = profile.badges || [];
+      const newBadges = new Set(currentBadges);
+
+      // Rule 1: First Blood (Any quiz completed)
+      newBadges.add("first_blood");
+
+      // Rule 2: Sharpshooter (100% score)
+      if (attempt.pct === 100) newBadges.add("sharpshooter");
+
+      // Rule 3: Survivor (Exactly 50% score)
+      if (attempt.pct === 50) newBadges.add("survivor");
+
+      // Rule 4: Grinder (Need to know total quizzes, but leaderboard view has it, or we can query count)
+      const { count } = await supabase.from("quiz_attempts").select("*", { count: "exact", head: true }).eq("user_id", userId);
+      if (count && count >= 5) newBadges.add("grinder");
+
+      if (newBadges.size > currentBadges.length) {
+        // Update user profile with new badges
+        await supabase
+          .from("profiles")
+          .update({ badges: Array.from(newBadges) })
+          .eq("id", userId);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to process badges", e);
+  }
+
+  return data ?? [];
+}
+
+export async function fetchFlashcards(userId) {
+  if (!supabase || !userId) return {};
+  const { data } = await supabase
+    .from("profiles")
+    .select("flashcards")
+    .eq("id", userId)
+    .single();
+  return data?.flashcards || {};
+}
+
+export async function syncFlashcards(userId, masteryObj) {
+  if (!supabase || !userId) return;
+  // We'll store it in the JSONB 'flashcards' column on 'profiles'
+  await supabase
+    .from("profiles")
+    .update({ flashcards: masteryObj })
+    .eq("id", userId);
 }
 
 /* ─── Leaderboard ───────────────────────────────────────────────── */

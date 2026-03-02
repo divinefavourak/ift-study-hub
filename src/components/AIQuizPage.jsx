@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { generateQuiz, PROVIDERS } from "../services/aiQuiz";
 import { syncAttempt } from "../services/supabase";
 import QuizPanel from "./QuizPanel";
+import { playSuccess, playError } from "../services/audio";
 
 /* ─── Gemini access code ─────────────────────────────────────── */
 // Set VITE_GEMINI_ACCESS_CODE in your .env to customise the code.
@@ -198,6 +199,9 @@ function AIQuizPage({ onSaveScore, user, defaultTopic }) {
       // Forward to parent for overall progress tracking
       onSaveScore(quizKeyStr, pct);
 
+      if (pct >= 80) playSuccess();
+      else playError();
+
       if (!activeSession) return;
 
       const completedSession = {
@@ -368,12 +372,13 @@ function AIQuizPage({ onSaveScore, user, defaultTopic }) {
             {activeSession.questions.length} questions ·{" "}
             {activeSession.topicLabel}
           </div>
-          <QuizPanel
-            key={quizKey}
-            questions={activeSession.questions}
-            quizKey={`ai_${activeSession.id}`}
-            onScoreSaved={handleScoreSaved}
-          />
+            <QuizPanel
+              key={quizKey}
+              questions={activeSession.questions}
+              quizKey={`ai_${activeSession.id}`}
+              onScoreSaved={handleScoreSaved}
+              provider={provider}
+            />
         </>
       )}
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { fetchLeaderboard, subscribeLeaderboard, getInitials } from "../services/supabase";
+import { fetchLeaderboard, subscribeLeaderboard, getInitials, BADGE_DEFS } from "../services/supabase";
 
 const TROPHY = ["🥇", "🥈", "🥉"];
 
@@ -100,6 +100,16 @@ export default function LeaderboardPage({ user, profile }) {
                   {row.avg_pct ?? "—"}%
                 </div>
                 <div className="lb-podium-sub">{row.quiz_count} quiz{row.quiz_count !== 1 ? "zes" : ""}</div>
+                
+                {row.badges && row.badges.length > 0 && (
+                  <div className="lb-podium-badges">
+                    {row.badges.map((b) => (
+                      <span key={b} title={BADGE_DEFS[b]?.desc || ""}>
+                        {BADGE_DEFS[b]?.icon || "🏅"}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null;
           })}
@@ -130,7 +140,7 @@ export default function LeaderboardPage({ user, profile }) {
               <tr>
                 <th>#</th>
                 <th>Player</th>
-                <th>Matric No.</th>
+                <th>Badges</th>
                 <th>Quizzes</th>
                 <th>Avg %</th>
                 <th>Best %</th>
@@ -157,7 +167,17 @@ export default function LeaderboardPage({ user, profile }) {
                         <div className="lb-fullname">{row.full_name}</div>
                       </div>
                     </td>
-                    <td className="lb-mono">{row.matric_no || "—"}</td>
+                    <td className="lb-center">
+                      {row.badges && row.badges.length > 0 ? (
+                        <div className="lb-table-badges">
+                          {row.badges.map((b) => (
+                            <span key={b} title={BADGE_DEFS[b]?.desc || ""}>
+                              {BADGE_DEFS[b]?.icon || "🏅"}
+                            </span>
+                          ))}
+                        </div>
+                      ) : "—"}
+                    </td>
                     <td className="lb-center">{row.quiz_count}</td>
                     <td className="lb-center">
                       <span className="lb-pct" style={{ color: gradeColor(row.avg_pct) }}>

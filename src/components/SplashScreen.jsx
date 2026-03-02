@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { playSplashHum, playReveal } from "../services/audio";
 
 /**
  * SplashScreen — shown once per session on first load.
@@ -50,7 +51,7 @@ export default function SplashScreen({ onDone }) {
     const schedule = [
       [120,  () => setStage(1)],   // grid appears
       [600,  () => setStage(2)],   // scan line
-      [1000, () => setStage(3)],   // IFT 211 logo
+      [1000, () => { setStage(3); playReveal(); }], // IFT 211 logo + audio sweep
       [1600, () => setStage(4)],   // subtitle
       [2200, () => setStage(5)],   // loading bar starts
     ];
@@ -73,6 +74,11 @@ export default function SplashScreen({ onDone }) {
         }, 20);
       }, 2200)
     );
+
+    // Note: The hum requires the user to have interacted previously, which
+    // is rare on a first fresh load due to browser autoplay policies, 
+    // but works great on subsequent reloads.
+    playSplashHum();
 
     return () => {
       timers.forEach(clearTimeout);

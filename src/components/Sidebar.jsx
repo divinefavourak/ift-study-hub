@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { NAV_ITEMS } from "../data/courseData";
-import { signOut, getInitials } from "../services/supabase";
+import { signOut, getInitials, BADGE_DEFS } from "../services/supabase";
+import { playHover, playClick } from "../services/audio";
 
 function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInClick, onSignOut }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   function handleNav(id) {
+    playClick();
     onNavigate(id);
     setMobileOpen(false);
   }
 
   async function handleSignOut() {
+    playClick();
     await signOut();
     onSignOut?.();
     setShowUserMenu(false);
@@ -22,7 +25,7 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
       <div className="brand">
         <div className="brand-code">IFT 211</div>
         <h1>DIGITAL LOGIC<br />STUDY HUB</h1>
-        <p>React + Vite course companion</p>
+        
       </div>
 
       <nav>
@@ -34,11 +37,43 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
                 key={item.id}
                 className={`nav-item ${activePage === item.id ? "active" : ""}`}
                 onClick={() => handleNav(item.id)}
+                onMouseEnter={playHover}
               >
                 <span className="nav-dot">{item.short}</span>
                 <span>{item.title}</span>
               </button>
             ))}
+            
+            {/* Insert Cheatsheet link in the Practice/Tools section */}
+            {group.label === "Practice" && (
+              <>
+                <button
+                  className={`nav-item ${activePage === "cheatsheet" ? "active" : ""}`}
+                  onClick={() => handleNav("cheatsheet")}
+                  onMouseEnter={playHover}
+                >
+                  <span className="nav-dot text-lg">📄</span>
+                  <span>PDF Cheatsheet</span>
+                </button>
+                <button
+                  className={`nav-item ${activePage === "logic-builder" ? "active" : ""}`}
+                  onClick={() => handleNav("logic-builder")}
+                  onMouseEnter={playHover}
+                >
+                  <span className="nav-dot text-lg">⚡</span>
+                  <span>Logic Gate Builder</span>
+                </button>
+                <button
+                  className={`nav-item highlight ${activePage === "battle" ? "active" : ""}`}
+                  style={{ border: "1px dashed var(--orange)" }}
+                  onClick={() => handleNav("battle")}
+                  onMouseEnter={playHover}
+                >
+                  <span className="nav-dot text-lg">⚔️</span>
+                  <span style={{ color: "var(--orange)", fontWeight: "bold" }}>Live Arena</span>
+                </button>
+              </>
+            )}
           </div>
         ))}
       </nav>
@@ -66,9 +101,17 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
                 <span className="sidebar-user-name">
                   {profile?.username ?? user.email.split("@")[0]}
                 </span>
-                <span className="sidebar-user-matric">
-                  {profile?.matric_no ?? "Signed in"}
-                </span>
+                {profile?.badges && profile.badges.length > 0 ? (
+                  <div className="sidebar-user-badges">
+                    {profile.badges.map((b) => (
+                      <span key={b} title={BADGE_DEFS[b]?.desc || ""}>
+                        {BADGE_DEFS[b]?.icon || "🏅"}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="sidebar-user-matric">New Student</span>
+                )}
               </div>
               <span className="sidebar-user-caret">{showUserMenu ? "▲" : "▼"}</span>
             </div>

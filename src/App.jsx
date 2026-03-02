@@ -10,6 +10,9 @@ import FullQuizPage from "./components/FullQuizPage";
 import GlossaryPage from "./components/GlossaryPage";
 import AIQuizPage from "./components/AIQuizPage";
 import LeaderboardPage from "./components/LeaderboardPage";
+import Cheatsheet from "./components/Cheatsheet";
+import LogicGateBuilder from "./components/LogicBuilder/LogicGateBuilder";
+import BattlePage from "./components/BattlePage";
 import SplashScreen from "./components/SplashScreen";
 import AuthModal from "./components/AuthModal";
 import { PAGE_IDS } from "./data/courseData";
@@ -121,10 +124,13 @@ function App() {
   function renderPage() {
     if (activePage === "home")             return <HomePage onNavigate={navigate} scoreBook={scoreBook} />;
     if (activePage === "source-map")       return <SourceMapPage />;
-    if (activePage === "flashcards")       return <FlashcardsPage />;
+    if (activePage === "flashcards")       return <FlashcardsPage user={session?.user} />;
     if (activePage === "section-quizzes")  return <SectionQuizzesPage onSaveScore={saveScore} user={session?.user} />;
     if (activePage === "full-quiz")        return <FullQuizPage onSaveScore={saveScore} user={session?.user} />;
     if (activePage === "ai-quiz")          return <AIQuizPage onSaveScore={saveScore} user={session?.user} defaultTopic={defaultTopic} />;
+    if (activePage === "cheatsheet")       return <Cheatsheet onBack={() => navigate("home")} />;
+    if (activePage === "logic-builder")    return <LogicGateBuilder />;
+    if (activePage === "battle")           return <BattlePage user={session?.user} profile={profile} />;
     if (activePage === "glossary")         return <GlossaryPage />;
     if (activePage === "leaderboard")      return <LeaderboardPage user={session?.user} profile={profile} />;
     if (activePage.startsWith("lec") || activePage.startsWith("note"))
