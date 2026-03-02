@@ -12,7 +12,7 @@ function HomePage({ onNavigate, scoreBook }) {
 
   return (
     <section className="page active-page">
-      <div className="hero-badge">IFT 211 | MATERIAL-ALIGNED INTERACTIVE HUB</div>
+      <div className="hero-badge">IFT 211 | MATERIAL-ALIGNED INTERACTIVE HUB ARRANGED BY JESUTOBI-001 OF CSC</div>
       <h2 className="hero-title">
         DIGITAL LOGIC
         <br />
