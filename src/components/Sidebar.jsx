@@ -72,6 +72,15 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
                   <span className="nav-dot text-lg">⚔️</span>
                   <span style={{ color: "var(--orange)", fontWeight: "bold" }}>Live Arena</span>
                 </button>
+                <button
+                  className={`nav-item highlight ${activePage === "h2h" ? "active" : ""}`}
+                  style={{ border: "1px dashed var(--cyan)" }}
+                  onClick={() => handleNav("h2h")}
+                  onMouseEnter={playHover}
+                >
+                  <span className="nav-dot text-lg">🏟️</span>
+                  <span style={{ color: "var(--cyan)", fontWeight: "bold" }}>H2H Scoreboard</span>
+                </button>
               </>
             )}
           </div>

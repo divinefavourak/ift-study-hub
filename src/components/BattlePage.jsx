@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLobby, useMatch } from "../services/multiplayer";
 import { generateQuiz } from "../services/aiQuiz";
+import { saveBattleResult } from "../services/supabase";
 
 const MATCH_LENGTH = 5;
 
@@ -57,6 +58,29 @@ export default function BattlePage({ user, profile }) {
   }, [matchState, isHost]);
 
   const [currentQIndex, setCurrentQIndex] = useState(0);
+  const savedRef = useRef(false);
+
+  // Save battle result when match finishes (host only, once)
+  // Must be here — before any conditional returns — to satisfy Rules of Hooks
+  useEffect(() => {
+    const isFinished = currentQIndex >= MATCH_LENGTH;
+    if (isFinished && isHost && !savedRef.current && opponentInfo && user && profile) {
+      savedRef.current = true;
+      const winnerId = myScore.score > opScore.score ? user.id
+        : opScore.score > myScore.score ? opponentInfo.id
+        : null; // draw
+      saveBattleResult({
+        player1Id: user.id,
+        player1Name: profile.username,
+        player1Score: myScore.score,
+        player2Id: opponentInfo.id,
+        player2Name: opponentInfo.username,
+        player2Score: opScore.score,
+        matchLength: MATCH_LENGTH,
+        winnerId,
+      });
+    }
+  }, [currentQIndex, isHost, opponentInfo]);
 
   // Authentication gate specifically for multiplayer
   if (!user || (!profile && user)) {

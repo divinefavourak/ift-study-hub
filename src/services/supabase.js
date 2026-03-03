@@ -178,6 +178,47 @@ export function subscribeLeaderboard(callback) {
   return () => supabase.removeChannel(channel);
 }
 
+/* ─── H2H Battle Results ────────────────────────────────────────── */
+
+export async function saveBattleResult(result) {
+  if (!supabase) return { error: { message: "Supabase not configured." } };
+  const { error } = await supabase.from("battle_results").insert({
+    player1_id: result.player1Id,
+    player1_name: result.player1Name,
+    player1_score: result.player1Score,
+    player2_id: result.player2Id,
+    player2_name: result.player2Name,
+    player2_score: result.player2Score,
+    match_length: result.matchLength,
+    winner_id: result.winnerId,
+  });
+  if (error) console.error("Failed to save battle result:", error);
+  return { error };
+}
+
+export async function fetchH2HLeaderboard() {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("battle_results")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  return data ?? [];
+}
+
+export function subscribeBattleResults(callback) {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel("battle-results-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "battle_results" },
+      () => fetchH2HLeaderboard().then(callback)
+    )
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}
+
 /* ─── Utilities ─────────────────────────────────────────────────── */
 
 const AVATAR_COLORS = [

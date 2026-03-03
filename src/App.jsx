@@ -13,6 +13,7 @@ import LeaderboardPage from "./components/LeaderboardPage";
 import Cheatsheet from "./components/Cheatsheet";
 import LogicGateBuilder from "./components/LogicBuilder/LogicGateBuilder";
 import BattlePage from "./components/BattlePage";
+import H2HLeaderboardPage from "./components/H2HLeaderboardPage";
 import SplashScreen from "./components/SplashScreen";
 import AuthModal from "./components/AuthModal";
 import { PAGE_IDS } from "./data/courseData";
@@ -128,6 +129,7 @@ function App() {
     if (activePage === "cheatsheet")       return <Cheatsheet onBack={() => navigate("home")} />;
     if (activePage === "logic-builder")    return <LogicGateBuilder />;
     if (activePage === "battle")           return <BattlePage user={session?.user} profile={profile} />;
+    if (activePage === "h2h")              return <H2HLeaderboardPage user={session?.user} />;
     if (activePage === "glossary")         return <GlossaryPage />;
     if (activePage === "leaderboard")      return <LeaderboardPage user={session?.user} profile={profile} />;
     if (activePage.startsWith("lec") || activePage.startsWith("note"))
