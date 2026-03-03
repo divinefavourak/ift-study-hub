@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { generateQuiz, PROVIDERS } from "../services/aiQuiz";
 import { syncAttempt } from "../services/supabase";
 import QuizPanel from "./QuizPanel";
@@ -164,6 +164,44 @@ function AIQuizPage({ onSaveScore, user, defaultTopic }) {
   // History drawn from localStorage (re-read on each render via useState init)
   const [sessions, setSessions] = useState(loadSessions);
 
+  /* ─── Backfill: sync past completed sessions to Supabase ────── */
+  // Runs once when the user logs in. Finds completed sessions that haven't
+  // been synced yet (missing `synced: true`), pushes them, then marks them
+  // so this never runs twice for the same attempt.
+  const backfillDoneRef = useRef(false);
+  useEffect(() => {
+    if (!user?.id || backfillDoneRef.current) return;
+    backfillDoneRef.current = true;
+
+    const pending = loadSessions().filter((s) => s.completed && !s.synced);
+    if (pending.length === 0) return;
+
+    (async () => {
+      const all = loadSessions();
+      for (const s of pending) {
+        try {
+          await syncAttempt(user.id, {
+            topicId:    s.topic,
+            topicLabel: s.topicLabel,
+            score:      s.score,
+            total:      s.total,
+            pct:        s.pct,
+            provider:   s.provider ?? "openrouter",
+          });
+          // Mark as synced in the local array
+          const idx = all.findIndex((x) => x.id === s.id);
+          if (idx !== -1) all[idx] = { ...all[idx], synced: true };
+        } catch (e) {
+          console.warn("Backfill sync failed for session", s.id, e);
+        }
+      }
+      saveSessions(all);
+      setSessions(all);
+      console.log(`✓ Backfilled ${pending.length} past quiz attempt(s) to Supabase.`);
+    })();
+  }, [user?.id]);
+
+
   /* ─── Generate ───────────────────────────────────────────── */
   async function handleGenerate() {
     setLoading(true);
@@ -229,6 +267,13 @@ function AIQuizPage({ onSaveScore, user, defaultTopic }) {
           total:      activeSession.total,
           pct,
           provider,
+        }).then(() => {
+          // Mark as synced so the backfill skips it on future logins
+          const fresh = loadSessions().map((s) =>
+            s.id === activeSession.id ? { ...s, synced: true } : s
+          );
+          saveSessions(fresh);
+          setSessions(fresh);
         }).catch(console.error);
       }
     },

@@ -131,7 +131,7 @@ export async function syncAttempt(userId, attempt) {
     console.error("Failed to process badges", e);
   }
 
-  return data ?? [];
+  return {};
 }
 
 export async function fetchFlashcards(userId) {

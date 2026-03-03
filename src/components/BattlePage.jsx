@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLobby, useMatch } from "../services/multiplayer";
 import { generateQuiz } from "../services/aiQuiz";
 import { saveBattleResult } from "../services/supabase";
+import { SECTION_QUIZZES } from "../data/courseData";
 
 const MATCH_LENGTH = 5;
 
@@ -32,6 +33,14 @@ const battleStyles = `
 // Random topic for variety
 const BATTLE_TOPICS = ["lec1", "lec2", "lec3", "lec4", "lec5", "lec6", "note1", "note2", "note3"];
 
+/** Pick `count` random local questions for a topic (fallback when AI is slow) */
+function getLocalFallback(topicId, count) {
+  const pool = SECTION_QUIZZES[topicId]?.questions
+    ?? SECTION_QUIZZES.lec1.questions; // ultimate fallback
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
 export default function BattlePage({ user, profile }) {
   const [activeMatchId, setActiveMatchId] = useState(null);
   
@@ -41,19 +50,31 @@ export default function BattlePage({ user, profile }) {
   // Match State
   const { matchState, opponentInfo, myScore, opScore, updateScore, isHost, questions, broadcastQuestions } = useMatch(activeMatchId, user, profile);
 
+  const [usingFallback, setUsingFallback] = useState(false);
+
   // When matchState becomes 'generating' and we're the host, generate AI questions
+  // Falls back to local questions if AI takes more than 6 seconds
   useEffect(() => {
     if (matchState === 'generating' && isHost) {
       const topic = BATTLE_TOPICS[Math.floor(Math.random() * BATTLE_TOPICS.length)];
-      generateQuiz(topic, MATCH_LENGTH)
-        .then((qs) => {
-          if (qs && qs.length > 0) {
-            broadcastQuestions(qs);
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to generate AI questions:', err);
-        });
+
+      const timeout = new Promise((resolve) =>
+        setTimeout(() => resolve({ questions: null, timedOut: true }), 6000)
+      );
+      const aiGen = generateQuiz(topic, MATCH_LENGTH)
+        .then((qs) => ({ questions: qs, timedOut: false }))
+        .catch(() => ({ questions: null, timedOut: true }));
+
+      Promise.race([aiGen, timeout]).then(({ questions: qs, timedOut }) => {
+        if (qs && qs.length > 0) {
+          broadcastQuestions(qs);
+        } else {
+          // AI was too slow or failed — use local curated questions
+          console.warn('AI generation timed out or failed. Using local fallback questions.');
+          setUsingFallback(true);
+          broadcastQuestions(getLocalFallback(topic, MATCH_LENGTH));
+        }
+      });
     }
   }, [matchState, isHost]);
 
@@ -205,6 +226,7 @@ export default function BattlePage({ user, profile }) {
           ✨ {isHost ? 'Generating AI Questions...' : 'Opponent is generating questions...'}
         </h2>
         <p style={{ color: 'var(--muted)' }}>Gemini is crafting {MATCH_LENGTH} unique questions for this battle.</p>
+        {isHost && <p style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '8px', fontFamily: 'var(--mono)' }}>⏱ Falling back to local questions if AI takes {'>'} 6s</p>}
       </section>
     );
   }
