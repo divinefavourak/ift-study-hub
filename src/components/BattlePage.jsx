@@ -33,12 +33,18 @@ const battleStyles = `
 // Random topic for variety
 const BATTLE_TOPICS = ["lec1", "lec2", "lec3", "lec4", "lec5", "lec6", "note1", "note2", "note3"];
 
-/** Pick `count` random local questions for a topic (fallback when AI is slow) */
+/** Pick `count` random local questions for a topic (fallback when AI is slow).
+ *  If the topic pool is smaller than count, supplements from all other sections. */
 function getLocalFallback(topicId, count) {
-  const pool = SECTION_QUIZZES[topicId]?.questions
-    ?? SECTION_QUIZZES.lec1.questions; // ultimate fallback
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+  const topicPool = SECTION_QUIZZES[topicId]?.questions ?? [];
+
+  if (topicPool.length >= count) {
+    return [...topicPool].sort(() => Math.random() - 0.5).slice(0, count);
+  }
+
+  // Not enough in this topic — pool from ALL sections
+  const allQuestions = Object.values(SECTION_QUIZZES).flatMap((s) => s.questions);
+  return [...allQuestions].sort(() => Math.random() - 0.5).slice(0, count);
 }
 
 export default function BattlePage({ user, profile }) {
@@ -85,11 +91,13 @@ export default function BattlePage({ user, profile }) {
   // Must be here — before any conditional returns — to satisfy Rules of Hooks
   useEffect(() => {
     const isFinished = currentQIndex >= MATCH_LENGTH;
+    console.log('[Battle Save]', { isFinished, isHost, saved: savedRef.current, hasOpponent: !!opponentInfo, hasUser: !!user, hasProfile: !!profile });
     if (isFinished && isHost && !savedRef.current && opponentInfo && user && profile) {
       savedRef.current = true;
       const winnerId = myScore.score > opScore.score ? user.id
         : opScore.score > myScore.score ? opponentInfo.id
         : null; // draw
+      console.log('[Battle Save] Saving result to Supabase...', { winnerId, myScore: myScore.score, opScore: opScore.score });
       saveBattleResult({
         player1Id: user.id,
         player1Name: profile.username,
@@ -311,12 +319,12 @@ export default function BattlePage({ user, profile }) {
               Return to Arena
             </button>
           </div>
-        ) : (
+        ) : questions[currentQIndex] ? (
           <div className="current-question" style={{ width: '100%', maxWidth: '600px', textAlign: 'left', background: 'var(--surface-2)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)' }}>
              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--cyan)', marginBottom: '16px', letterSpacing: '2px', textTransform: 'uppercase' }}>Question {currentQIndex + 1}</div>
-             <p style={{ fontSize: '1.25rem', lineHeight: '1.6', marginBottom: '24px', fontWeight: '500', color: 'var(--text)' }}>{questions[currentQIndex]?.question}</p>
+             <p style={{ fontSize: '1.25rem', lineHeight: '1.6', marginBottom: '24px', fontWeight: '500', color: 'var(--text)' }}>{questions[currentQIndex].question}</p>
              <div className="options" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-               {questions[currentQIndex]?.options.map((opt, i) => (
+               {questions[currentQIndex].options.map((opt, i) => (
                  <button 
                   key={i} 
                   className="interactive-card"
@@ -329,6 +337,12 @@ export default function BattlePage({ user, profile }) {
                  </button>
                ))}
              </div>
+          </div>
+        ) : (
+          // Defensive: question data hasn't arrived yet
+          <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '48px' }}>
+            <div className="battle-spinner" style={{ margin: '0 auto 16px' }} />
+            Waiting for question…
           </div>
         )}
       </div>

@@ -97,7 +97,11 @@ export async function syncAttempt(userId, attempt) {
     pct: attempt.pct,
     provider: attempt.provider ?? "openrouter",
   });
-  if (error) return { error };
+  if (error) {
+    console.error("❌ syncAttempt insert failed:", error.code, error.message, error.details);
+    return { error };
+  }
+  console.log("✅ syncAttempt: attempt saved to Supabase successfully.");
 
   // 2. Evaluate Badges (Fire & Forget)
   try {
