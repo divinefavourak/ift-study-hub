@@ -95,12 +95,14 @@ export default function BattlePage({ user, profile }) {
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const savedRef = useRef(false);
 
-  // Save battle result when match finishes (host only, once)
+  // Save battle result when BOTH players finish (host only, once)
   // Must be here — before any conditional returns — to satisfy Rules of Hooks
   useEffect(() => {
-    const isFinished = currentQIndex >= MATCH_LENGTH;
-    console.log('[Battle Save]', { isFinished, isHost, saved: savedRef.current, hasOpponent: !!opponentInfo, hasUser: !!user, hasProfile: !!profile });
-    if (isFinished && isHost && !savedRef.current && opponentInfo && user && profile) {
+    const iDone = currentQIndex >= MATCH_LENGTH;
+    const opDone = opScore.progress >= MATCH_LENGTH;
+    const bothDone = iDone && opDone;
+    console.log('[Battle Save]', { iDone, opDone, isHost, saved: savedRef.current, hasOpponent: !!opponentInfo, hasUser: !!user, hasProfile: !!profile });
+    if (bothDone && isHost && !savedRef.current && opponentInfo && user && profile) {
       savedRef.current = true;
       const winnerId = myScore.score > opScore.score ? user.id
         : opScore.score > myScore.score ? opponentInfo.id
@@ -117,7 +119,7 @@ export default function BattlePage({ user, profile }) {
         winnerId,
       });
     }
-  }, [currentQIndex, isHost, opponentInfo]);
+  }, [currentQIndex, opScore, isHost, opponentInfo]);
 
   // Authentication gate specifically for multiplayer
   if (!user || (!profile && user)) {
@@ -280,7 +282,8 @@ export default function BattlePage({ user, profile }) {
   }
 
   // 4. ACTIVE MATCH / RESULTS VIEW
-  const isFinished = currentQIndex >= MATCH_LENGTH;
+  const iDone = currentQIndex >= MATCH_LENGTH;
+  const bothDone = iDone && opScore.progress >= MATCH_LENGTH;
 
   return (
     <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', paddingTop: '16px' }}>
@@ -329,7 +332,7 @@ export default function BattlePage({ user, profile }) {
 
       {/* Match Content */}
       <div className="match-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {isFinished ? (
+        {bothDone ? (
           <div className="results battle-fade" style={{ textAlign: 'center', padding: '48px 0' }}>
             <div className={myScore.score > opScore.score ? 'battle-victory' : myScore.score === opScore.score ? '' : 'battle-defeat'} style={{ fontSize: '6rem', marginBottom: '24px', display: 'inline-block' }}>
               {myScore.score > opScore.score ? '🏆' : myScore.score === opScore.score ? '🤝' : '💀'}
@@ -343,6 +346,12 @@ export default function BattlePage({ user, profile }) {
             <button className="action" style={{ background: 'var(--cyan)', color: 'black', boxShadow: '0 0 20px rgba(24, 217, 218, 0.4)', padding: '16px 32px', fontSize: '1.25rem' }} onClick={() => { setActiveMatchId(null); setEngagedStatus('online'); }}>
               Return to Arena
             </button>
+          </div>
+        ) : iDone ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <div className="battle-spinner" style={{ margin: '0 auto 16px' }} />
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--cyan)' }}>You're done! ⚡</h2>
+            <p style={{ color: 'var(--muted)' }}>Waiting for {opponentInfo?.username || 'opponent'} to finish... ({opScore.progress}/{MATCH_LENGTH})</p>
           </div>
         ) : questions[currentQIndex] ? (
           <div className="current-question" style={{ width: '100%', maxWidth: '600px', textAlign: 'left', background: 'var(--surface-2)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)' }}>
