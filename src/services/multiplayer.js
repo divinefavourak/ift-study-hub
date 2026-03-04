@@ -9,6 +9,7 @@ export function useLobby(user, profile) {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [incomingChallenge, setIncomingChallenge] = useState(null);
   const [channel, setChannel] = useState(null);
+  const channelRef = useRef(null);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -47,6 +48,8 @@ export function useLobby(user, profile) {
         }
       });
 
+    channelRef.current = lobbyChannel;
+
     setChannel(lobbyChannel);
 
     return () => {
@@ -67,7 +70,20 @@ export function useLobby(user, profile) {
 
   const clearChallenge = () => setIncomingChallenge(null);
 
-  return { onlineUsers, incomingChallenge, sendChallenge, clearChallenge };
+  /**
+   * Update this user's lobby presence status.
+   * Call with 'in_battle' when entering a match, 'online' when returning.
+   */
+  const setEngagedStatus = async (newStatus) => {
+    const ch = channelRef.current;
+    if (!ch || !profile) return;
+    await ch.track({
+      username: profile.username || 'Anonymous',
+      status: newStatus,
+    });
+  };
+
+  return { onlineUsers, incomingChallenge, sendChallenge, clearChallenge, setEngagedStatus };
 }
 
 /**

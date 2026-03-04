@@ -120,7 +120,7 @@ function App() {
 
   // ── Page renderer ─────────────────────────────────────────────
   function renderPage() {
-    if (activePage === "home")             return <HomePage onNavigate={navigate} scoreBook={scoreBook} />;
+    if (activePage === "home")             return <HomePage onNavigate={navigate} scoreBook={scoreBook} user={session?.user} onSignInClick={() => setShowAuth(true)} />;
     if (activePage === "source-map")       return <SourceMapPage />;
     if (activePage === "flashcards")       return <FlashcardsPage user={session?.user} />;
     if (activePage === "section-quizzes")  return <SectionQuizzesPage onSaveScore={saveScore} user={session?.user} />;

@@ -24,6 +24,14 @@ const battleStyles = `
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+@keyframes battlePulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,214,255,0.4); }
+  50% { box-shadow: 0 0 40px rgba(0,214,255,0.8); }
+}
+@keyframes inBattlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 .battle-victory { animation: battleBounce 1.5s infinite; color: var(--green); text-shadow: 0 0 40px var(--green); }
 .battle-defeat { animation: battleShake 1s infinite; color: var(--muted); text-shadow: none; filter: grayscale(1); }
 .battle-fade { animation: battleFadeIn 0.5s ease-out forwards; }
@@ -51,7 +59,7 @@ export default function BattlePage({ user, profile }) {
   const [activeMatchId, setActiveMatchId] = useState(null);
   
   // Lobby State
-  const { onlineUsers, incomingChallenge, sendChallenge, clearChallenge } = useLobby(user, profile);
+  const { onlineUsers, incomingChallenge, sendChallenge, clearChallenge, setEngagedStatus } = useLobby(user, profile);
   
   // Match State
   const { matchState, opponentInfo, myScore, opScore, updateScore, isHost, questions, broadcastQuestions } = useMatch(activeMatchId, user, profile);
@@ -156,7 +164,7 @@ export default function BattlePage({ user, profile }) {
               <button 
                 className="action" 
                 style={{ background: '#090b11', color: 'white', fontWeight: 'bold' }}
-                onClick={() => { setActiveMatchId(incomingChallenge.matchId); clearChallenge(); }}
+                onClick={() => { setActiveMatchId(incomingChallenge.matchId); clearChallenge(); setEngagedStatus('in_battle'); }}
               >
                 Accept
               </button>
@@ -185,21 +193,38 @@ export default function BattlePage({ user, profile }) {
                     </div>
                     <div>
                       <div style={{ fontWeight: 'bold', color: 'var(--text)' }}>{u.username}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }}></span> Online
-                      </div>
+                      {u.status === 'in_battle' ? (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--orange)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--orange)', display: 'inline-block', animation: 'inBattlePulse 1.2s ease-in-out infinite' }}></span> ⚔️ In Battle
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }}></span> Online
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <button 
-                    className="action small outline"
-                    style={{ borderColor: 'var(--cyan)', color: 'var(--cyan)', fontWeight: 'bold' }}
-                    onClick={() => {
-                      const mId = sendChallenge(u.id);
-                      setActiveMatchId(mId);
-                    }}
-                  >
-                    Challenge ⚔️
-                  </button>
+                  {u.status === 'in_battle' ? (
+                    <button
+                      className="action small outline"
+                      disabled
+                      style={{ borderColor: 'var(--border)', color: 'var(--muted)', fontWeight: 'bold', cursor: 'not-allowed', opacity: 0.5 }}
+                    >
+                      In Battle
+                    </button>
+                  ) : (
+                    <button 
+                      className="action small outline"
+                      style={{ borderColor: 'var(--cyan)', color: 'var(--cyan)', fontWeight: 'bold' }}
+                      onClick={() => {
+                        const mId = sendChallenge(u.id);
+                        setActiveMatchId(mId);
+                        setEngagedStatus('in_battle');
+                      }}
+                    >
+                      Challenge ⚔️
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -217,7 +242,7 @@ export default function BattlePage({ user, profile }) {
         <div className="battle-spinner" />
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Waiting for connection...</h2>
         <p style={{ color: 'var(--muted)' }}>Waiting for your opponent to accept the challenge.</p>
-        <button className="action outline" style={{ marginTop: '32px', color: 'var(--muted)', borderColor: 'var(--border)' }} onClick={() => setActiveMatchId(null)}>
+        <button className="action outline" style={{ marginTop: '32px', color: 'var(--muted)', borderColor: 'var(--border)' }} onClick={() => { setActiveMatchId(null); setEngagedStatus('online'); }}>
           Cancel Challenge
         </button>
       </section>
@@ -247,7 +272,7 @@ export default function BattlePage({ user, profile }) {
         <div style={{ fontSize: '4rem', marginBottom: '16px' }}>💨</div>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Opponent Fled!</h2>
         <p style={{ color: 'var(--muted)' }}>They couldn't handle the heat. You win by forfeit!</p>
-        <button className="action" style={{ marginTop: '32px', background: 'var(--cyan)', color: 'black' }} onClick={() => setActiveMatchId(null)}>
+        <button className="action" style={{ marginTop: '32px', background: 'var(--cyan)', color: 'black' }} onClick={() => { setActiveMatchId(null); setEngagedStatus('online'); }}>
           Back to Lobby
         </button>
       </section>
@@ -315,7 +340,7 @@ export default function BattlePage({ user, profile }) {
             <p style={{ color: 'var(--muted)', marginBottom: '32px', maxWidth: '400px', margin: '0 auto 32px' }}>
               {myScore.score > opScore.score ? 'You crushed their logic circuits! Phenomenal performance.' : myScore.score === opScore.score ? 'An even match!' : 'Your timing diagrams were slightly off this time. Analyze & retry!'}
             </p>
-            <button className="action" style={{ background: 'var(--cyan)', color: 'black', boxShadow: '0 0 20px rgba(24, 217, 218, 0.4)', padding: '16px 32px', fontSize: '1.25rem' }} onClick={() => setActiveMatchId(null)}>
+            <button className="action" style={{ background: 'var(--cyan)', color: 'black', boxShadow: '0 0 20px rgba(24, 217, 218, 0.4)', padding: '16px 32px', fontSize: '1.25rem' }} onClick={() => { setActiveMatchId(null); setEngagedStatus('online'); }}>
               Return to Arena
             </button>
           </div>

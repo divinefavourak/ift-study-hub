@@ -59,7 +59,7 @@ const STATS = [
   { value: "100%", label: "Free" },
 ];
 
-function HomePage({ onNavigate, scoreBook }) {
+function HomePage({ onNavigate, scoreBook, user, onSignInClick }) {
   const [visible, setVisible] = useState(false);
 
   // Trigger entrance animation on mount
@@ -97,7 +97,7 @@ function HomePage({ onNavigate, scoreBook }) {
         <div className="hp-eyebrow hp-anim" style={{ "--d": "0ms" }}>
           IFT 211 · MATERIAL-ALIGNED INTERACTIVE HUB
           <span className="hp-eyebrow-dot">·</span>
-          JESUTOBI-001 OF CSC
+          BY JESUTOBI-001 OF CSC
         </div>
 
         <h2 className="hp-title hp-anim" style={{ "--d": "120ms" }}>
@@ -139,6 +139,22 @@ function HomePage({ onNavigate, scoreBook }) {
           </span>
         ))}
       </div>
+
+      {/* ── Sign-in banner (shown when not logged in) ────────── */}
+      {!user && onSignInClick && (
+        <div className="hp-signin-banner hp-anim" style={{ "--d": "580ms" }}>
+          <div className="hp-signin-banner-content">
+            <div className="hp-signin-banner-icon">🔑</div>
+            <div>
+              <div className="hp-signin-banner-title">Track your progress</div>
+              <div className="hp-signin-banner-sub">Sign in to sync quiz scores, earn badges, and compete on the leaderboard.</div>
+            </div>
+          </div>
+          <button className="hp-signin-banner-btn" onClick={onSignInClick}>
+            Sign In with Google
+          </button>
+        </div>
+      )}
 
       {/* ── Quick-access cards ────────────────────────── */}
       <div className="hp-section-label hp-anim" style={{ "--d": "600ms" }}>

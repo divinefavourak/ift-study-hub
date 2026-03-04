@@ -1934,6 +1934,75 @@ body {
   line-height: 1.3;
 }
 
+/* ── Sign-in banner ─────────────────────────────────────── */
+.hp-signin-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(255,138,61,0.12), rgba(167,139,250,0.08));
+  border: 1px solid rgba(255,138,61,0.35);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.hp-signin-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hp-signin-banner-icon {
+  font-size: 1.6rem;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255,138,61,0.15);
+  flex-shrink: 0;
+}
+
+.hp-signin-banner-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.hp-signin-banner-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+  max-width: 420px;
+}
+
+.hp-signin-banner-btn {
+  background: linear-gradient(135deg, #ff8a3d, #a78bfa);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(255,138,61,0.3);
+  flex-shrink: 0;
+}
+
+.hp-signin-banner-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(255,138,61,0.4);
+}
+
 /* ── Mobile homepage tweaks ─────────────────────────────── */
 @media (max-width: 768px) {
   .home-page {
@@ -1957,7 +2026,18 @@ body {
   .hp-perf {
     padding: 18px 16px;
   }
+
+  .hp-signin-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hp-signin-banner-btn {
+    width: 100%;
+    text-align: center;
+  }
 }
+
 
 /* ============================================================
    SPLASH SCREEN

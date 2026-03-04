@@ -15,9 +15,9 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
 
   async function handleSignOut() {
     playClick();
-    await signOut();
-    onSignOut?.();
-    setShowUserMenu(false);
+    setShowUserMenu(false); // Close menu immediately, don't wait for async
+    onSignOut?.();          // Reset app state immediately
+    await signOut();        // Then tell Supabase (async, non-blocking)
   }
 
   const navContent = (
@@ -99,46 +99,48 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
         {/* ── User section ──────────────────────────────────── */}
         <div className="sidebar-user">
           {user ? (
-            <div className="sidebar-user-row" onClick={() => setShowUserMenu((v) => !v)}>
-              <div
-                className="sidebar-avatar"
-                style={{ background: profile?.avatar_color ?? "var(--blue)" }}
-              >
-                {getInitials(profile?.full_name || profile?.username || user.email)}
+            <>
+              <div className="sidebar-user-row" onClick={() => setShowUserMenu((v) => !v)}>
+                <div
+                  className="sidebar-avatar"
+                  style={{ background: profile?.avatar_color ?? "var(--blue)" }}
+                >
+                  {getInitials(profile?.full_name || profile?.username || user.email)}
+                </div>
+                <div className="sidebar-user-info">
+                  <span className="sidebar-user-name">
+                    {profile?.username ?? user.email.split("@")[0]}
+                  </span>
+                  {profile?.badges && profile.badges.length > 0 ? (
+                    <div className="sidebar-user-badges">
+                      {profile.badges.map((b) => (
+                        <span key={b} title={BADGE_DEFS[b]?.desc || ""}>
+                          {BADGE_DEFS[b]?.icon || "🏅"}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="sidebar-user-matric">New Student</span>
+                  )}
+                </div>
+                <span className="sidebar-user-caret">{showUserMenu ? "▲" : "▼"}</span>
               </div>
-              <div className="sidebar-user-info">
-                <span className="sidebar-user-name">
-                  {profile?.username ?? user.email.split("@")[0]}
-                </span>
-                {profile?.badges && profile.badges.length > 0 ? (
-                  <div className="sidebar-user-badges">
-                    {profile.badges.map((b) => (
-                      <span key={b} title={BADGE_DEFS[b]?.desc || ""}>
-                        {BADGE_DEFS[b]?.icon || "🏅"}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="sidebar-user-matric">New Student</span>
-                )}
-              </div>
-              <span className="sidebar-user-caret">{showUserMenu ? "▲" : "▼"}</span>
-            </div>
+
+              {showUserMenu && (
+                <div className="sidebar-user-menu">
+                  <button onClick={() => { handleNav("leaderboard"); setShowUserMenu(false); }}>
+                    🏆 Leaderboard
+                  </button>
+                  <button className="signout" onClick={handleSignOut}>
+                    🚪 Sign Out
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <button className="sidebar-signin-btn" onClick={onSignInClick}>
               🔑 Sign In / Join
             </button>
-          )}
-
-          {showUserMenu && user && (
-            <div className="sidebar-user-menu">
-              <button onClick={() => { handleNav("leaderboard"); setShowUserMenu(false); }}>
-                🏆 Leaderboard
-              </button>
-              <button className="signout" onClick={handleSignOut}>
-                Sign Out
-              </button>
-            </div>
           )}
         </div>
       </div>
