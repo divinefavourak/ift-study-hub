@@ -1,14 +1,23 @@
 import { useMemo, useState } from "react";
 import { GLOSSARY } from "../data/courseData";
 
+const MODULE_LABELS = {
+  lec1: "Lecture 1",
+  note1: "Note One",
+  note2: "Note Two",
+};
+
 function moduleLabel(module) {
-  if (module === "lec1") return "Lecture 1";
-  if (module === "note1") return "Note One";
-  return "Note Two";
+  return MODULE_LABELS[module] ?? module;
 }
 
 function GlossaryPage() {
   const [filter, setFilter] = useState("all");
+
+  const modules = useMemo(
+    () => [...new Set(GLOSSARY.map((e) => e.module))],
+    []
+  );
 
   const entries = useMemo(
     () => GLOSSARY.filter((item) => filter === "all" || item.module === filter),
@@ -30,24 +39,15 @@ function GlossaryPage() {
         >
           All
         </button>
-        <button
-          className={`pill ${filter === "lec1" ? "active" : ""}`}
-          onClick={() => setFilter("lec1")}
-        >
-          Lecture 1
-        </button>
-        <button
-          className={`pill ${filter === "note1" ? "active" : ""}`}
-          onClick={() => setFilter("note1")}
-        >
-          Note One
-        </button>
-        <button
-          className={`pill ${filter === "note2" ? "active" : ""}`}
-          onClick={() => setFilter("note2")}
-        >
-          Note Two
-        </button>
+        {modules.map((mod) => (
+          <button
+            key={mod}
+            className={`pill ${filter === mod ? "active" : ""}`}
+            onClick={() => setFilter(mod)}
+          >
+            {moduleLabel(mod)}
+          </button>
+        ))}
       </div>
 
       <div className="glossary-grid">
@@ -64,4 +64,3 @@ function GlossaryPage() {
 }
 
 export default GlossaryPage;
-

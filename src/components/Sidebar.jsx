@@ -15,9 +15,8 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
 
   async function handleSignOut() {
     playClick();
-    setShowUserMenu(false); // Close menu immediately, don't wait for async
-    onSignOut?.();          // Reset app state immediately
-    await signOut();        // Then tell Supabase (async, non-blocking)
+    setShowUserMenu(false);
+    onSignOut?.();
   }
 
   const navContent = (
@@ -25,7 +24,6 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
       <div className="brand">
         <div className="brand-code">IFT 211</div>
         <h1>DIGITAL LOGIC<br />STUDY HUB</h1>
-        
       </div>
 
       <nav>
@@ -35,54 +33,17 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
             {group.items.map((item) => (
               <button
                 key={item.id}
-                className={`nav-item ${activePage === item.id ? "active" : ""}`}
+                className={`nav-item ${item.accent ? "highlight" : ""} ${activePage === item.id ? "active" : ""}`}
+                style={item.accent ? { border: `1px dashed ${item.accent}` } : undefined}
                 onClick={() => handleNav(item.id)}
                 onMouseEnter={playHover}
               >
-                <span className="nav-dot">{item.short}</span>
-                <span>{item.title}</span>
+                <span className="nav-dot text-lg">{item.short}</span>
+                <span style={item.accent ? { color: item.accent, fontWeight: "bold" } : undefined}>
+                  {item.title}
+                </span>
               </button>
             ))}
-            
-            {/* Insert Cheatsheet link in the Practice/Tools section */}
-            {group.label === "Practice" && (
-              <>
-                <button
-                  className={`nav-item ${activePage === "cheatsheet" ? "active" : ""}`}
-                  onClick={() => handleNav("cheatsheet")}
-                  onMouseEnter={playHover}
-                >
-                  <span className="nav-dot text-lg">📄</span>
-                  <span>PDF Cheatsheet</span>
-                </button>
-                <button
-                  className={`nav-item ${activePage === "logic-builder" ? "active" : ""}`}
-                  onClick={() => handleNav("logic-builder")}
-                  onMouseEnter={playHover}
-                >
-                  <span className="nav-dot text-lg">⚡</span>
-                  <span>Logic Gate Builder</span>
-                </button>
-                <button
-                  className={`nav-item highlight ${activePage === "battle" ? "active" : ""}`}
-                  style={{ border: "1px dashed var(--orange)" }}
-                  onClick={() => handleNav("battle")}
-                  onMouseEnter={playHover}
-                >
-                  <span className="nav-dot text-lg">⚔️</span>
-                  <span style={{ color: "var(--orange)", fontWeight: "bold" }}>Live Arena</span>
-                </button>
-                <button
-                  className={`nav-item highlight ${activePage === "h2h" ? "active" : ""}`}
-                  style={{ border: "1px dashed var(--cyan)" }}
-                  onClick={() => handleNav("h2h")}
-                  onMouseEnter={playHover}
-                >
-                  <span className="nav-dot text-lg">🏟️</span>
-                  <span style={{ color: "var(--cyan)", fontWeight: "bold" }}>H2H Scoreboard</span>
-                </button>
-              </>
-            )}
           </div>
         ))}
       </nav>
@@ -96,7 +57,6 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
           <div className="progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
 
-        {/* ── User section ──────────────────────────────────── */}
         <div className="sidebar-user">
           {user ? (
             <>
@@ -159,7 +119,6 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
           <span className="mobile-brand-title">DIGITAL LOGIC</span>
         </div>
         <div className="mobile-header-right">
-          {/* Avatar or sign-in on mobile */}
           {user ? (
             <div
               className="sidebar-avatar sm"

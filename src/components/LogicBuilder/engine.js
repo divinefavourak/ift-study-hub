@@ -25,12 +25,16 @@ export function evaluateCircuit(nodes, edges) {
       if (node.type === 'switchNode') return;
       
       const incomingEdges = edges.filter(e => e.target === node.id);
-      
-      // Determine inputs based on target handles
-      const edgeA = incomingEdges.find(e => e.targetHandle === 'inA' || (!e.targetHandle && incomingEdges.length > 0));
+
+      // Determine inputs based on target handles.
+      // LightNode uses handle id="in"; gate inputs use "inA"/"inB".
+      // Fall back to the first incoming edge if no specific handle matches.
+      const edgeA = incomingEdges.find(e =>
+        e.targetHandle === 'inA' ||
+        e.targetHandle === 'in' ||
+        (!e.targetHandle && incomingEdges.length > 0)
+      );
       const edgeB = incomingEdges.find(e => e.targetHandle === 'inB');
-      // If a node only takes one input (NOT, Light), edgeA is used.
-      // If it takes two and only one is connected, edgeB might be undefined.
       
       const valA = edgeA ? values[edgeA.source] : 0; // default unconnected to 0
       const valB = edgeB ? values[edgeB.source] : 0;

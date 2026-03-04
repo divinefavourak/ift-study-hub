@@ -1,21 +1,31 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { FLASHCARDS } from "../data/courseData";
 import { fetchFlashcards, syncFlashcards } from "../services/supabase";
 
+const MODULE_LABELS = {
+  lec1: "Lecture 1",
+  note1: "Note One",
+  note2: "Note Two",
+};
+
 function labelForModule(module) {
-  if (module === "lec1") return "Lecture 1";
-  if (module === "note1") return "Note One";
-  return "Note Two";
+  return MODULE_LABELS[module] ?? module;
 }
 
 export default function FlashcardsPage({ user }) {
-  const [filter, setFilter] = useState("all"); // 'all', 'lec1', 'note1', 'note2'
+  const [filter, setFilter] = useState("all");
   const [showOnlyReview, setShowOnlyReview] = useState(false);
   const [flipped, setFlipped] = useState({});
-  const [mastery, setMastery] = useState({}); // { [cardIndex]: 'mastered' | 'review' }
+  const [mastery, setMastery] = useState({});
   const [loading, setLoading] = useState(true);
+  const syncTimeout = useRef(null);
 
-  // Load mastery state from Supabase on mount
+  // Derive unique modules from data (no hardcoding)
+  const modules = useMemo(
+    () => [...new Set(FLASHCARDS.map((c) => c.module))],
+    []
+  );
+
   useEffect(() => {
     async function load() {
       if (user) {
@@ -27,13 +37,13 @@ export default function FlashcardsPage({ user }) {
     load();
   }, [user]);
 
-  // Handle Mastery update
-  async function handleMastery(e, index, status) {
-    e.stopPropagation(); // prevent flipping the card back
+  function handleMastery(e, index, status) {
+    e.stopPropagation();
     const newMastery = { ...mastery, [index]: status };
     setMastery(newMastery);
     if (user) {
-      await syncFlashcards(user.id, newMastery);
+      clearTimeout(syncTimeout.current);
+      syncTimeout.current = setTimeout(() => syncFlashcards(user.id, newMastery), 1500);
     }
   }
 
@@ -72,27 +82,18 @@ export default function FlashcardsPage({ user }) {
         >
           All
         </button>
-        <button
-          className={`pill ${filter === "lec1" ? "active" : ""}`}
-          onClick={() => setFilter("lec1")}
-        >
-          Lecture 1
-        </button>
-        <button
-          className={`pill ${filter === "note1" ? "active" : ""}`}
-          onClick={() => setFilter("note1")}
-        >
-          Note One
-        </button>
-        <button
-          className={`pill ${filter === "note2" ? "active" : ""}`}
-          onClick={() => setFilter("note2")}
-        >
-          Note Two
-        </button>
+        {modules.map((mod) => (
+          <button
+            key={mod}
+            className={`pill ${filter === mod ? "active" : ""}`}
+            onClick={() => setFilter(mod)}
+          >
+            {labelForModule(mod)}
+          </button>
+        ))}
       </div>
 
-      <div className="filters" style={{ marginTop: '10px' }}>
+      <div className="filters" style={{ marginTop: "10px" }}>
         <button
           className={`pill highlight ${showOnlyReview ? "active" : ""}`}
           onClick={() => setShowOnlyReview(!showOnlyReview)}
@@ -109,7 +110,7 @@ export default function FlashcardsPage({ user }) {
           cards.map((card) => {
             const idx = card.originalIndex;
             const isMastered = mastery[idx] === "mastered";
-            
+
             return (
               <div
                 key={`${card.module}-${idx}`}
@@ -121,30 +122,29 @@ export default function FlashcardsPage({ user }) {
                   <div className="flash-front" style={{ border: isMastered ? "2px solid var(--green)" : "none" }}>
                     <div className="flash-meta">
                       Card {idx + 1} / {FLASHCARDS.length} | {labelForModule(card.module)}
-                      {isMastered && <span style={{color:"var(--green)", float:"right"}}>✓ Mastered</span>}
+                      {isMastered && <span style={{ color: "var(--green)", float: "right" }}>✓ Mastered</span>}
                     </div>
                     <p>{card.question}</p>
                   </div>
                   <div className="flash-back" style={{ border: isMastered ? "2px solid var(--green)" : "none" }}>
                     <div className="flash-meta">Answer</div>
                     <p>{card.answer}</p>
-                    
-                    {/* Mastery Controls */}
-                    <div className="flash-mastery-controls" style={{ 
-                      marginTop: "auto", 
-                      display: "flex", 
-                      gap: "10px", 
-                      borderTop: "1px solid var(--border)", 
-                      paddingTop: "12px" 
+
+                    <div className="flash-mastery-controls" style={{
+                      marginTop: "auto",
+                      display: "flex",
+                      gap: "10px",
+                      borderTop: "1px solid var(--border)",
+                      paddingTop: "12px"
                     }}>
-                      <button 
+                      <button
                         className={`action outline small ${mastery[idx] === "review" ? "active" : ""}`}
                         style={{ flex: 1, borderColor: "var(--orange)", color: "var(--orange)" }}
                         onClick={(e) => handleMastery(e, idx, "review")}
                       >
                         Needs Review ↻
                       </button>
-                      <button 
+                      <button
                         className={`action outline small ${mastery[idx] === "mastered" ? "active" : ""}`}
                         style={{ flex: 1, borderColor: "var(--green)", color: "var(--green)" }}
                         onClick={(e) => handleMastery(e, idx, "mastered")}
@@ -162,4 +162,3 @@ export default function FlashcardsPage({ user }) {
     </section>
   );
 }
-

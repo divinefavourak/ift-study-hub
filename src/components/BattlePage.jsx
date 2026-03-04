@@ -6,38 +6,6 @@ import { SECTION_QUIZZES } from "../data/courseData";
 
 const MATCH_LENGTH = 5;
 
-const battleStyles = `
-@keyframes battleBounce {
-  0%, 100% { transform: translateY(0) scale(1.1); }
-  50% { transform: translateY(-20px) scale(1.1); }
-}
-@keyframes battleShake {
-  0%, 100% { transform: translateX(0) scale(0.9); opacity: 0.5; }
-  25% { transform: translateX(-10px) rotate(-5deg); opacity: 0.8; }
-  75% { transform: translateX(10px) rotate(5deg); opacity: 0.8; }
-}
-@keyframes battleFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes battleSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes battlePulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(0,214,255,0.4); }
-  50% { box-shadow: 0 0 40px rgba(0,214,255,0.8); }
-}
-@keyframes inBattlePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-.battle-victory { animation: battleBounce 1.5s infinite; color: var(--green); text-shadow: 0 0 40px var(--green); }
-.battle-defeat { animation: battleShake 1s infinite; color: var(--muted); text-shadow: none; filter: grayscale(1); }
-.battle-fade { animation: battleFadeIn 0.5s ease-out forwards; }
-.battle-spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: battleSpin 0.8s linear infinite; margin: 0 auto 16px; }
-`;
-
 // Random topic for variety
 const BATTLE_TOPICS = ["lec1", "lec2", "lec3", "lec4", "lec5", "lec6", "note1", "note2", "note3"];
 
@@ -149,7 +117,6 @@ export default function BattlePage({ user, profile }) {
   if (!activeMatchId) {
     return (
       <section className="page active-page lb-page">
-        <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
         <div className="lb-header" style={{ paddingBottom: '24px', borderBottom: '1px solid var(--border)' }}>
           <div className="lb-eyebrow">IFT 211 · MULTIPLAYER</div>
           <h2 className="lb-title">⚔️ Live Arena</h2>
@@ -240,7 +207,6 @@ export default function BattlePage({ user, profile }) {
   if (matchState === 'waiting') {
     return (
       <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
-        <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
         <div className="battle-spinner" />
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Waiting for connection...</h2>
         <p style={{ color: 'var(--muted)' }}>Waiting for your opponent to accept the challenge.</p>
@@ -255,7 +221,6 @@ export default function BattlePage({ user, profile }) {
   if (matchState === 'generating') {
     return (
       <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
-        <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
         <div className="battle-spinner" />
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--cyan)' }}>
           ✨ {isHost ? 'Generating AI Questions...' : 'Opponent is generating questions...'}
@@ -270,7 +235,6 @@ export default function BattlePage({ user, profile }) {
   if (matchState === 'finished_abandoned') {
     return (
       <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
-        <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
         <div style={{ fontSize: '4rem', marginBottom: '16px' }}>💨</div>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Opponent Fled!</h2>
         <p style={{ color: 'var(--muted)' }}>They couldn't handle the heat. You win by forfeit!</p>
@@ -287,7 +251,6 @@ export default function BattlePage({ user, profile }) {
 
   return (
     <section className="page active-page" style={{ display: 'flex', flexDirection: 'column', paddingTop: '16px' }}>
-      <style dangerouslySetInnerHTML={{ __html: battleStyles }} />
       {/* HUD Tracker */}
       <div className="match-hud" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '32px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: '100%', height: '100%', background: 'rgba(24, 217, 218, 0.05)', filter: 'blur(100px)', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}></div>

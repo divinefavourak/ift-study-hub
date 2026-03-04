@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./App.css";
 import Sidebar from "./components/Sidebar";
 import HomePage from "./components/HomePage";
@@ -16,12 +17,23 @@ import BattlePage from "./components/BattlePage";
 import H2HLeaderboardPage from "./components/H2HLeaderboardPage";
 import SplashScreen from "./components/SplashScreen";
 import AuthModal from "./components/AuthModal";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { PAGE_IDS } from "./data/courseData";
-import { onAuthChange, getSession, getProfile, signOut } from "./services/supabase";
+import { onAuthChange, getProfile, signOut } from "./services/supabase";
 
 const STORAGE_KEYS = { visited: "ift211_react_visited", scores: "ift211_react_scores" };
 
 function App() {
+  const rNavigate = useNavigate();
+  const location = useLocation();
+
+  // Derive active page from URL (e.g. "/lec1" → "lec1", "/" → "home")
+  const activePage = location.pathname.slice(1) || "home";
+
+  function navigate(pageId) {
+    rNavigate(pageId === "home" ? "/" : `/${pageId}`);
+  }
+
   // ── Splash ────────────────────────────────────────────────────
   const [splashDone, setSplashDone] = useState(
     () => !!sessionStorage.getItem("ift211_splash_seen")
@@ -37,8 +49,6 @@ function App() {
   const [needUsername, setNeedUsername] = useState(false);
 
   useEffect(() => {
-    // Use onAuthStateChange as the single source of truth.
-    // Supabase fires this once on mount with the restored session (or null).
     const unsub = onAuthChange(async (s) => {
       setSession(s);
       if (s?.user) {
@@ -59,18 +69,15 @@ function App() {
       setNeedUsername(false);
       setShowAuth(false);
     } else {
-      // New Google user — need to collect username
       setProfile(null);
       setNeedUsername(true);
       setShowAuth(true);
     }
   }
 
-  // Show auth gate after splash finishes for guests
   const showAuthGate = splashDone && !authLoading && !session && !showAuth;
 
-  // ── Navigation & progress ─────────────────────────────────────
-  const [activePage, setActivePage] = useState("home");
+  // ── Progress tracking ─────────────────────────────────────────
   const [visitedPages, setVisitedPages] = useState(() => {
     try {
       const s = JSON.parse(localStorage.getItem(STORAGE_KEYS.visited) || "[]");
@@ -78,6 +85,7 @@ function App() {
     } catch { /**/ }
     return new Set(["home"]);
   });
+
   const [scoreBook, setScoreBook] = useState(() => {
     try {
       const s = JSON.parse(localStorage.getItem(STORAGE_KEYS.scores) || "{}");
@@ -85,6 +93,21 @@ function App() {
     } catch { /**/ }
     return {};
   });
+
+  // Track visited pages from URL changes
+  const prevPath = useRef(null);
+  useEffect(() => {
+    if (location.pathname === prevPath.current) return;
+    prevPath.current = location.pathname;
+    const pageId = location.pathname.slice(1) || "home";
+    setVisitedPages((prev) => {
+      if (prev.has(pageId)) return prev;
+      const next = new Set(prev);
+      next.add(pageId);
+      localStorage.setItem(STORAGE_KEYS.visited, JSON.stringify([...next]));
+      return next;
+    });
+  }, [location.pathname]);
 
   const progressPct = useMemo(() => {
     if (PAGE_IDS.length === 0) return 0;
@@ -108,33 +131,27 @@ function App() {
     });
   }
 
-  function navigate(pageId) {
-    setActivePage(pageId);
-    setVisitedPages((prev) => {
-      const next = new Set(prev);
-      next.add(pageId);
-      localStorage.setItem(STORAGE_KEYS.visited, JSON.stringify([...next]));
-      return next;
-    });
-  }
-
   // ── Page renderer ─────────────────────────────────────────────
+  const PAGE_MAP = {
+    home:              () => <HomePage onNavigate={navigate} scoreBook={scoreBook} user={session?.user} onSignInClick={() => setShowAuth(true)} />,
+    "source-map":      () => <SourceMapPage />,
+    flashcards:        () => <FlashcardsPage user={session?.user} />,
+    "section-quizzes": () => <SectionQuizzesPage onSaveScore={saveScore} user={session?.user} />,
+    "full-quiz":       () => <FullQuizPage onSaveScore={saveScore} user={session?.user} />,
+    "ai-quiz":         () => <AIQuizPage onSaveScore={saveScore} user={session?.user} defaultTopic={defaultTopic} />,
+    cheatsheet:        () => <Cheatsheet onBack={() => navigate("home")} />,
+    "logic-builder":   () => <LogicGateBuilder />,
+    battle:            () => <BattlePage user={session?.user} profile={profile} />,
+    h2h:               () => <H2HLeaderboardPage user={session?.user} />,
+    glossary:          () => <GlossaryPage />,
+    leaderboard:       () => <LeaderboardPage user={session?.user} profile={profile} />,
+  };
+
   function renderPage() {
-    if (activePage === "home")             return <HomePage onNavigate={navigate} scoreBook={scoreBook} user={session?.user} onSignInClick={() => setShowAuth(true)} />;
-    if (activePage === "source-map")       return <SourceMapPage />;
-    if (activePage === "flashcards")       return <FlashcardsPage user={session?.user} />;
-    if (activePage === "section-quizzes")  return <SectionQuizzesPage onSaveScore={saveScore} user={session?.user} />;
-    if (activePage === "full-quiz")        return <FullQuizPage onSaveScore={saveScore} user={session?.user} />;
-    if (activePage === "ai-quiz")          return <AIQuizPage onSaveScore={saveScore} user={session?.user} defaultTopic={defaultTopic} />;
-    if (activePage === "cheatsheet")       return <Cheatsheet onBack={() => navigate("home")} />;
-    if (activePage === "logic-builder")    return <LogicGateBuilder />;
-    if (activePage === "battle")           return <BattlePage user={session?.user} profile={profile} />;
-    if (activePage === "h2h")              return <H2HLeaderboardPage user={session?.user} />;
-    if (activePage === "glossary")         return <GlossaryPage />;
-    if (activePage === "leaderboard")      return <LeaderboardPage user={session?.user} profile={profile} />;
     if (activePage.startsWith("lec") || activePage.startsWith("note"))
-                                           return <TopicPage pageId={activePage} onNavigate={navigate} onQuickQuiz={handleQuickQuiz} />;
-    return <HomePage onNavigate={navigate} scoreBook={scoreBook} />;
+      return <TopicPage pageId={activePage} onNavigate={navigate} onQuickQuiz={handleQuickQuiz} />;
+    const render = PAGE_MAP[activePage];
+    return render ? render() : <HomePage onNavigate={navigate} scoreBook={scoreBook} />;
   }
 
   return (
@@ -153,7 +170,7 @@ function App() {
         <div className="auth-gate-overlay">
           <AuthModal
             needUsername={false}
-            onClose={null /* non-dismissible gate */}
+            onClose={null}
           />
         </div>
       )}
@@ -185,10 +202,14 @@ function App() {
         user={session?.user}
         profile={profile}
         onSignInClick={() => setShowAuth(true)}
-        onSignOut={() => { setSession(null); setProfile(null); setActivePage("home"); }}
+        onSignOut={() => { setSession(null); setProfile(null); navigate("home"); signOut(); }}
       />
 
-      <main className="main-panel">{renderPage()}</main>
+      <main className="main-panel">
+        <ErrorBoundary key={activePage}>
+          {renderPage()}
+        </ErrorBoundary>
+      </main>
     </div>
   );
 }

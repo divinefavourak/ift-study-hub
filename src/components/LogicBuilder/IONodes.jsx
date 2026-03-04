@@ -1,4 +1,4 @@
-import { Handle, Position } from "reactflow";
+import { Handle, Position } from "@xyflow/react";
 
 export function SwitchNode({ data }) {
   const { value = 0, toggle } = data;

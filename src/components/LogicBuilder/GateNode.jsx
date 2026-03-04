@@ -1,4 +1,4 @@
-import { Handle, Position } from "reactflow";
+import { Handle, Position } from "@xyflow/react";
 
 const gateStyles = {
   AND: { bg: "#3b82f6", label: "AND", inputs: 2 },

@@ -59,11 +59,19 @@ export const NAV_ITEMS = [
       { id: "full-quiz", short: "FQ", title: "Full Quiz" },
       { id: "ai-quiz", short: "AI", title: "✦ AI Quiz" },
       { id: "leaderboard", short: "🏆", title: "Leaderboard" },
+      { id: "cheatsheet", short: "📄", title: "PDF Cheatsheet", util: true },
+      { id: "logic-builder", short: "⚡", title: "Logic Gate Builder", util: true },
+      { id: "battle", short: "⚔️", title: "Live Arena", util: true, accent: "var(--orange)" },
+      { id: "h2h", short: "🏟️", title: "H2H Scoreboard", util: true, accent: "var(--cyan)" },
     ],
   },
 ];
 
-export const PAGE_IDS = NAV_ITEMS.flatMap((group) => group.items.map((item) => item.id));
+// PAGE_IDS excludes utility pages so they don't dilute course progress %
+export const PAGE_IDS = NAV_ITEMS
+  .flatMap((group) => group.items)
+  .filter((item) => !item.util)
+  .map((item) => item.id);
 
 export const HOME_TAGS = [
   { label: "Analog vs Digital", tone: "cyan" },

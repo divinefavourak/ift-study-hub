@@ -2,8 +2,20 @@ import { useMemo, useState } from "react";
 import { SECTION_QUIZZES } from "../data/courseData";
 import QuizPanel from "./QuizPanel";
 
+const SECTION_KEYS = Object.keys(SECTION_QUIZZES);
+
+const SECTION_LABELS = {
+  lec1: "Lecture 1",
+  note1: "Note One",
+  note2: "Note Two",
+};
+
+function sectionLabel(key) {
+  return SECTION_LABELS[key] ?? key;
+}
+
 function SectionQuizzesPage({ onSaveScore }) {
-  const [active, setActive] = useState("lec1");
+  const [active, setActive] = useState(SECTION_KEYS[0]);
   const questions = useMemo(() => SECTION_QUIZZES[active].questions, [active]);
 
   return (
@@ -15,24 +27,15 @@ function SectionQuizzesPage({ onSaveScore }) {
       </div>
 
       <div className="filters">
-        <button
-          className={`pill ${active === "lec1" ? "active" : ""}`}
-          onClick={() => setActive("lec1")}
-        >
-          Lecture 1
-        </button>
-        <button
-          className={`pill ${active === "note1" ? "active" : ""}`}
-          onClick={() => setActive("note1")}
-        >
-          Note One
-        </button>
-        <button
-          className={`pill ${active === "note2" ? "active" : ""}`}
-          onClick={() => setActive("note2")}
-        >
-          Note Two
-        </button>
+        {SECTION_KEYS.map((key) => (
+          <button
+            key={key}
+            className={`pill ${active === key ? "active" : ""}`}
+            onClick={() => setActive(key)}
+          >
+            {sectionLabel(key)}
+          </button>
+        ))}
       </div>
 
       <QuizPanel

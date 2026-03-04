@@ -1,13 +1,14 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import ReactFlow, {
+import {
+  ReactFlow,
   ReactFlowProvider,
   addEdge,
   useNodesState,
   useEdgesState,
   Controls,
   Background,
-} from "reactflow";
-import "reactflow/dist/style.css";
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
 import GateNode from "./GateNode";
 import { SwitchNode, LightNode } from "./IONodes";
@@ -89,9 +90,9 @@ export default function LogicGateBuilder() {
       // Extract node type and gate type (if it's a gate)
       const [nodeClass, gateType] = typeStr.split(':');
       
-      const position = reactFlowInstance.project({
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
       });
       
       const newNode = {
