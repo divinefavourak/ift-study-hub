@@ -49,6 +49,7 @@ export const NAV_ITEMS = [
       { id: "lec12-memorg", short: "MO", title: "Memory Organization" },
       { id: "lec13-hierarchy", short: "MH", title: "Memory Hierarchy" },
       { id: "lec14-serial", short: "SP", title: "Serial Protocol Basics" },
+      { id: "lec-cmem", short: "CM", title: "Computer Memory" },
     ],
   },
   {
@@ -127,6 +128,10 @@ export const SOURCE_FILES = [
   {
     name: "The_Secret_Language_of_Your_Devices.mp4",
     status: "Registered as supplementary media source without invented transcript content.",
+  },
+  {
+    name: "IFT 211 Lecture-Computer Memory.pdf",
+    status: "Mapped to Computer Memory page covering RAM, ROM, cache memory, memory hierarchy, and capacity calculations.",
   },
 ];
 
@@ -251,6 +256,46 @@ export const FLASHCARDS = [
     module: "note3",
     question: "What outputs does a magnitude comparator produce?",
     answer: "Three outputs: A > B, A = B, and A < B.",
+  },
+  {
+    module: "lec-cmem",
+    question: "What are the two major groups of memory circuits?",
+    answer: "Dynamic memories (RAM — store data for active computer use) and static memories (store information that defines the operating state of a digital system).",
+  },
+  {
+    module: "lec-cmem",
+    question: "Which two processor registers handle memory–CPU data transfer?",
+    answer: "MAR (Memory Address Register) holds the address; MDR (Memory Data Register) holds the data being read or written.",
+  },
+  {
+    module: "lec-cmem",
+    question: "What is the formula for memory capacity?",
+    answer: "Memory capacity = m × n bits, where m is the number of words and n is the number of bits per word.",
+  },
+  {
+    module: "lec-cmem",
+    question: "How does DRAM differ from SRAM?",
+    answer: "DRAM must be periodically refreshed to retain data (slower, cheaper, smaller). SRAM retains data as long as power is supplied without refresh (faster, more expensive, larger).",
+  },
+  {
+    module: "lec-cmem",
+    question: "What is a cache hit versus a cache miss?",
+    answer: "Cache hit: requested data is found in cache — fast access. Cache miss: data is not in cache and must be fetched from slower main memory.",
+  },
+  {
+    module: "lec-cmem",
+    question: "Name the three cache mapping methods.",
+    answer: "Associative mapping, Direct mapping, and Set-Associative mapping.",
+  },
+  {
+    module: "lec-cmem",
+    question: "What is the key difference between RAM and ROM?",
+    answer: "RAM is volatile (data lost on power-off) and supports read/write. ROM is non-volatile (retains data without power) and is read-only.",
+  },
+  {
+    module: "lec-cmem",
+    question: "What are the three primary types of computer memory?",
+    answer: "Primary memory (main memory/RAM), cache memory, and secondary memory (magnetic disks, etc.).",
   },
 ];
 
@@ -737,6 +782,69 @@ export const SECTION_QUIZZES = {
       },
     ],
   },
+  "lec-cmem": {
+    label: "Computer Memory",
+    questions: [
+      {
+        module: "lec-cmem",
+        question: "A processor with 20 address lines can address up to how many memory locations?",
+        options: ["2^16 = 64K", "2^20 = 1M (mega)", "2^32 = 4G", "2^8 = 256"],
+        correct: 1,
+        feedback: [
+          "Incorrect. 2^16 = 64K corresponds to a 16-bit address bus.",
+          "Correct. 2^20 = 1,048,576 ≈ 1M memory locations.",
+          "Incorrect. 2^32 = 4G corresponds to a 32-bit address bus.",
+          "Incorrect. 2^8 = 256 corresponds to only 8 address lines.",
+        ],
+      },
+      {
+        module: "lec-cmem",
+        question: "A memory chip specified as 2K×8 has a total capacity of:",
+        options: ["2 KB", "8 KB", "16 KB", "32 KB"],
+        correct: 2,
+        feedback: [
+          "Incorrect. 2K words alone does not equal capacity without including bit width.",
+          "Incorrect. That would require 2K×4 or 1K×8.",
+          "Correct. 2K = 2048 words; 2048 × 8 bits = 16,384 bits = 16 KB.",
+          "Incorrect. 32 KB would require 2K×16.",
+        ],
+      },
+      {
+        module: "lec-cmem",
+        question: "SRAM differs from DRAM in that SRAM:",
+        options: [
+          "Requires periodic refresh to retain data.",
+          "Retains data without refresh but is more expensive.",
+          "Is always larger in storage capacity.",
+          "Is used only in secondary storage devices.",
+        ],
+        correct: 1,
+        feedback: [
+          "Incorrect. Periodic refresh is a characteristic of DRAM, not SRAM.",
+          "Correct. SRAM holds data without refresh as long as power is on; it is faster but more expensive than DRAM.",
+          "Incorrect. SRAM is smaller in capacity due to cost constraints.",
+          "Incorrect. SRAM is used in cache memory, not secondary storage.",
+        ],
+      },
+      {
+        module: "lec-cmem",
+        question: "A cache miss occurs when:",
+        options: [
+          "The requested data is found in cache and returned quickly.",
+          "The cache controller resets all stored blocks.",
+          "The requested memory address is not present in cache, so main memory must be accessed.",
+          "Data is written to ROM instead of RAM.",
+        ],
+        correct: 2,
+        feedback: [
+          "Incorrect. Finding data in cache is a cache hit, not a miss.",
+          "Incorrect. The controller does not reset all blocks on a miss.",
+          "Correct. A cache miss forces a slower main-memory access and the block is then loaded into cache.",
+          "Incorrect. ROM is unrelated to the cache hit/miss mechanism.",
+        ],
+      },
+    ],
+  },
   note3: {
     label: "Note Three – Subtractors & Comparators",
     questions: [
@@ -807,6 +915,7 @@ export const FULL_QUIZ = [
   ...SECTION_QUIZZES.note1.questions,
   ...SECTION_QUIZZES.note2.questions,
   ...SECTION_QUIZZES.note3.questions,
+  ...SECTION_QUIZZES["lec-cmem"].questions,
 ];
 
 export const GLOSSARY = [
@@ -884,6 +993,56 @@ export const GLOSSARY = [
     module: "note2",
     term: "Carry look-ahead",
     definition: "Adder strategy using generate/propagate terms for faster carry computation.",
+  },
+  {
+    module: "lec-cmem",
+    term: "MAR",
+    definition: "Memory Address Register — holds the address of the memory location to be accessed by the processor.",
+  },
+  {
+    module: "lec-cmem",
+    term: "MDR",
+    definition: "Memory Data Register — holds the data being transferred to or from a memory location.",
+  },
+  {
+    module: "lec-cmem",
+    term: "Volatile memory",
+    definition: "Memory that loses its stored contents when power is removed (e.g., RAM).",
+  },
+  {
+    module: "lec-cmem",
+    term: "Cache hit",
+    definition: "Condition where the CPU's requested data is found in cache memory, allowing fast retrieval.",
+  },
+  {
+    module: "lec-cmem",
+    term: "Cache miss",
+    definition: "Condition where the requested data is not in cache; the CPU must access the slower main memory.",
+  },
+  {
+    module: "lec-cmem",
+    term: "DRAM",
+    definition: "Dynamic RAM — must be periodically refreshed to retain data; slower but cheaper than SRAM.",
+  },
+  {
+    module: "lec-cmem",
+    term: "SRAM",
+    definition: "Static RAM — retains data as long as power is supplied without refresh; faster but more expensive than DRAM.",
+  },
+  {
+    module: "lec-cmem",
+    term: "Word size",
+    definition: "The number of bits in a memory word; determines data bus width and the maximum addressable memory range.",
+  },
+  {
+    module: "lec-cmem",
+    term: "EPROM",
+    definition: "Erasable Programmable ROM — can be erased using ultraviolet light and reprogrammed.",
+  },
+  {
+    module: "lec-cmem",
+    term: "EEPROM",
+    definition: "Electrically Erasable Programmable ROM — can be erased electrically on a per-cell basis without UV light.",
   },
 ];
 

@@ -1227,6 +1227,170 @@ const PAGES = {
       </>
     ),
   },
+
+  "lec-cmem": {
+    tag: "Computer Memory",
+    title: "COMPUTER MEMORY",
+    subtitle:
+      "Primary memory, cache memory, secondary storage, RAM/ROM types, memory capacity, and the memory hierarchy.",
+    body: (
+      <>
+        <article className="content-block">
+          <h4>Overview</h4>
+          <p>
+            Computer memory is the storage space where data to be processed and instructions required for
+            processing are stored. Memory is divided into a large number of small parts called{" "}
+            <Term label="cells" tip="Each cell has a unique address ranging from 0 to memory size minus one." />.
+          </p>
+          <p>
+            Memory circuits fall into two major groups: <strong>dynamic memories</strong> that store active
+            data (e.g., RAM in a PC) and <strong>static memories</strong> that define the operating state
+            of a digital system.
+          </p>
+          <div className="info-box info">
+            Example: A 64K-word memory has 64 × 1024 = 65,536 locations addressed from 0 to 65,535.
+          </div>
+        </article>
+
+        <div className="split">
+          <article className="content-block">
+            <h4>Memory Types</h4>
+            <ol>
+              <li><strong>Primary Memory</strong> — main working memory (RAM/ROM); fast, volatile.</li>
+              <li><strong>Cache Memory</strong> — small, ultra-fast buffer between CPU and RAM.</li>
+              <li><strong>Secondary Memory</strong> — large, non-volatile storage (magnetic disks, SSDs).</li>
+            </ol>
+          </article>
+
+          <article className="content-block">
+            <h4>Memory–Processor Connection</h4>
+            <p>Data transfer uses two processor registers:</p>
+            <ul>
+              <li>
+                <Term label="MAR" tip="Memory Address Register — holds the address of the target memory location." /> — holds the address.
+              </li>
+              <li>
+                <Term label="MDR" tip="Memory Data Register — holds data being read from or written to memory." /> — holds the data.
+              </li>
+            </ul>
+            <p>
+              Addressing capacity: a k-bit address bus gives up to 2<sup>k</sup> addressable locations.
+              A 16-bit bus → 64K locations; 32-bit → 4G locations.
+            </p>
+          </article>
+        </div>
+
+        <article className="content-block">
+          <h4>Memory Capacity</h4>
+          <p>
+            Capacity depends on two parameters: <strong>m</strong> (number of words) and <strong>n</strong> (bits per word).
+          </p>
+          <div className="formula">Memory Capacity = m × n bits</div>
+          <p>
+            A chip with 10 address lines has 2<sup>10</sup> = 1,024 locations. With an 8-bit data width,
+            total size = 1,024 × 8 = 8,192 bits = 1 KB.
+          </p>
+          <div className="info-box ok">
+            Example: A 2K×8 chip stores 2,048 × 8 = 16,384 bits = 16 KB.
+          </div>
+        </article>
+
+        <div className="split">
+          <article className="content-block">
+            <h4>RAM — Random Access Memory</h4>
+            <p>
+              RAM is <Term label="volatile" tip="Contents are lost when power is removed." /> — contents
+              are lost on power-off. It holds the active OS, running programs, and current data.
+            </p>
+            <p>
+              Memory cells are etched on a silicon wafer in a grid of bit lines (columns) and word lines
+              (rows). The intersection of a bit line and word line is the cell's address.
+            </p>
+            <table className="table">
+              <thead><tr><th>Type</th><th>Refresh needed?</th><th>Speed</th><th>Cost</th></tr></thead>
+              <tbody>
+                <tr><td>SRAM (Static)</td><td>No</td><td>Faster</td><td>Higher</td></tr>
+                <tr><td>DRAM (Dynamic)</td><td>Yes (every few ms)</td><td>Slower</td><td>Lower</td></tr>
+              </tbody>
+            </table>
+            <div className="info-box info">
+              DRAM is used for large main memory; SRAM is used for cache due to speed.
+            </div>
+          </article>
+
+          <article className="content-block">
+            <h4>ROM — Read-Only Memory</h4>
+            <p>
+              ROM is <strong>non-volatile</strong> — contents survive power-off. Used to store firmware
+              (boot programs) and fixed system code.
+            </p>
+            <ul>
+              <li><strong>PROM</strong> — Programmable ROM: programmed once by user with special circuit; cannot be reprogrammed.</li>
+              <li><strong>EPROM</strong> — Erasable PROM: erased by ultraviolet light; data can survive ~10 years.</li>
+              <li><strong>MPROM</strong> — Mask-Programmed ROM: programmed only at the factory.</li>
+              <li><strong>EEPROM / Flash</strong> — Electrically Erasable PROM: erased per-cell electrically, no UV required.</li>
+            </ul>
+          </article>
+        </div>
+
+        <article className="content-block">
+          <h4>Cache Memory</h4>
+          <p>
+            Cache sits between the CPU and main memory. Because processors became much faster than DRAM,
+            cache bridges the speed gap by keeping the most frequently accessed data close to the CPU.
+          </p>
+          <ul>
+            <li><strong>Cache hit</strong> — requested address found in cache → fast response.</li>
+            <li><strong>Cache miss</strong> — address not in cache → must fetch from slower main memory.</li>
+          </ul>
+          <p>Cache access time is 5–10× faster than main memory access time.</p>
+
+          <h4>Cache Levels</h4>
+          <table className="table">
+            <thead><tr><th>Level</th><th>Location</th><th>Size</th></tr></thead>
+            <tbody>
+              <tr><td>L1 (Internal)</td><td>On processor chip</td><td>8–256 KB</td></tr>
+              <tr><td>L2 (External)</td><td>SRAM chips near CPU</td><td>64 KB – 2 MB</td></tr>
+              <tr><td>L3</td><td>On motherboard</td><td>Larger; high-end CPUs only</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Cache Mapping Methods</h4>
+          <p>When cache is full, a <strong>replacement algorithm</strong> decides which block to evict. The mapping function defines correspondence between main-memory blocks and cache slots:</p>
+          <ol>
+            <li><strong>Associative Mapping</strong> — any block can go into any cache slot (most flexible).</li>
+            <li><strong>Direct Mapping</strong> — each block maps to exactly one cache slot (simplest, fastest lookup).</li>
+            <li><strong>Set-Associative Mapping</strong> — blocks map to a set of slots (compromise between the two).</li>
+          </ol>
+          <div className="info-box info">
+            Advantages of cache: faster than RAM, lower access time, holds frequently used code/data.
+            Disadvantages: limited capacity, expensive.
+          </div>
+        </article>
+
+        <article className="content-block">
+          <h4>Memory Hierarchy</h4>
+          <p>
+            No single memory type meets all three goals (fast, large, cheap) simultaneously. A
+            <strong> memory hierarchy</strong> combines all types to balance speed, capacity, and cost:
+          </p>
+          <table className="table">
+            <thead><tr><th>Level</th><th>Example</th><th>Speed</th><th>Cost/bit</th><th>Volatile?</th></tr></thead>
+            <tbody>
+              <tr><td>Registers</td><td>CPU registers</td><td>Fastest</td><td>Highest</td><td>Yes</td></tr>
+              <tr><td>L1/L2 Cache</td><td>SRAM on chip</td><td>Very fast</td><td>High</td><td>Yes</td></tr>
+              <tr><td>Main Memory</td><td>DRAM</td><td>Fast</td><td>Medium</td><td>Yes</td></tr>
+              <tr><td>Secondary</td><td>Magnetic disk / SSD</td><td>Slow</td><td>Low</td><td>No</td></tr>
+            </tbody>
+          </table>
+          <div className="info-box ok">
+            The goal: make the system <em>appear</em> to have the speed of registers and the capacity of
+            disk, through intelligent use of each memory tier.
+          </div>
+        </article>
+      </>
+    ),
+  },
 };
 
 function TopicPage({ pageId, onNavigate, onQuickQuiz }) {
