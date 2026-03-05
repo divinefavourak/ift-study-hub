@@ -20,19 +20,28 @@ function buildPlayerStats(matches) {
       { id: m.player2_id, name: m.player2_name, score: m.player2_score, opScore: m.player1_score },
     ].forEach(({ id, name, score, opScore }) => {
       if (!id) return;
-      if (!stats[id]) stats[id] = { id, name, wins: 0, losses: 0, draws: 0, played: 0, scored: 0, conceded: 0, form: [] };
+      if (!stats[id]) stats[id] = { id, name, wins: 0, losses: 0, draws: 0, played: 0, points: 0, scored: 0, conceded: 0, form: [] };
       stats[id].played++;
       stats[id].scored += score;
       stats[id].conceded += opScore;
-      if (score > opScore) { stats[id].wins++; stats[id].form.push("W"); }
-      else if (score < opScore) { stats[id].losses++; stats[id].form.push("L"); }
-      else { stats[id].draws++; stats[id].form.push("D"); }
+      if (score > opScore) {
+        stats[id].wins++;
+        stats[id].points += 3;
+        stats[id].form.push("W");
+      } else if (score < opScore) {
+        stats[id].losses++;
+        stats[id].form.push("L");
+      } else {
+        stats[id].draws++;
+        stats[id].points += 1;
+        stats[id].form.push("D");
+      }
     });
   });
-  // Keep only last 5 form entries and sort by wins desc
+  // Keep only last 5 form entries and sort by points desc, then goal difference
   return Object.values(stats)
     .map((s) => ({ ...s, form: s.form.slice(0, 5) }))
-    .sort((a, b) => b.wins - a.wins || (b.scored - b.conceded) - (a.scored - a.conceded));
+    .sort((a, b) => b.points - a.points || (b.scored - b.conceded) - (a.scored - a.conceded));
 }
 
 export default function H2HLeaderboardPage({ user }) {
@@ -98,6 +107,9 @@ export default function H2HLeaderboardPage({ user }) {
                     </div>
                   </div>
                   <div className="h2h-standing-right">
+                    <div className="h2h-standing-pts" title="League points (W=3, D=1, L=0)">
+                      {p.points} <span style={{ fontSize: "0.65rem", opacity: 0.7 }}>PTS</span>
+                    </div>
                     <div className="h2h-standing-gd" title="Goal difference (scored − conceded)">
                       {p.scored - p.conceded >= 0 ? "+" : ""}{p.scored - p.conceded}
                     </div>

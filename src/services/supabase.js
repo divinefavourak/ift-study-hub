@@ -75,6 +75,14 @@ export async function createProfile(userId, { username, fullName, avatarUrl }) {
   });
 }
 
+export async function updateUsername(userId, newUsername) {
+  if (!supabase) return { error: { message: "Supabase not configured." } };
+  return supabase
+    .from("profiles")
+    .update({ username: newUsername.trim().toLowerCase() })
+    .eq("id", userId);
+}
+
 export const BADGE_DEFS = {
   first_blood:  { id: "first_blood",  icon: "🩸", title: "First Blood",  desc: "Completed your first AI quiz." },
   sharpshooter: { id: "sharpshooter", icon: "🎯", title: "Sharpshooter", desc: "Scored a perfect 100% on a quiz." },

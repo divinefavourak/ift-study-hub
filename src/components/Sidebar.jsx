@@ -3,7 +3,7 @@ import { NAV_ITEMS } from "../data/courseData";
 import { signOut, getInitials, BADGE_DEFS } from "../services/supabase";
 import { playHover, playClick } from "../services/audio";
 
-function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInClick, onSignOut }) {
+function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInClick, onEditUsername, onSignOut }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -90,6 +90,9 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
                 <div className="sidebar-user-menu">
                   <button onClick={() => { handleNav("leaderboard"); setShowUserMenu(false); }}>
                     🏆 Leaderboard
+                  </button>
+                  <button onClick={() => { setShowUserMenu(false); onEditUsername?.(); }}>
+                    ✏️ Edit Username
                   </button>
                   <button className="signout" onClick={handleSignOut}>
                     🚪 Sign Out

@@ -19,7 +19,7 @@ import SplashScreen from "./components/SplashScreen";
 import AuthModal from "./components/AuthModal";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { PAGE_IDS } from "./data/courseData";
-import { onAuthChange, getProfile, signOut } from "./services/supabase";
+import { onAuthChange, getProfile, getSession, signOut, updateUsername } from "./services/supabase";
 
 const STORAGE_KEYS = { visited: "ift211_react_visited", scores: "ift211_react_scores" };
 
@@ -45,10 +45,26 @@ function App() {
   const [authLoading, setAuthLoading]   = useState(true);
 
   // Auth modal control
-  const [showAuth, setShowAuth]         = useState(false);
-  const [needUsername, setNeedUsername] = useState(false);
+  const [showAuth, setShowAuth]             = useState(false);
+  const [needUsername, setNeedUsername]     = useState(false);
+  const [showEditUsername, setShowEditUsername] = useState(false);
+  const [editUsernameValue, setEditUsernameValue] = useState("");
+  const [editUsernameError, setEditUsernameError] = useState("");
+  const [editUsernameLoading, setEditUsernameLoading] = useState(false);
 
   useEffect(() => {
+    // Immediately restore session from storage (fixes logout-on-refresh)
+    getSession().then(async (s) => {
+      setSession(s);
+      if (s?.user) {
+        await resolveProfile(s.user);
+      } else {
+        setProfile(null);
+        setNeedUsername(false);
+      }
+      setAuthLoading(false);
+    });
+
     const unsub = onAuthChange(async (s) => {
       setSession(s);
       if (s?.user) {
@@ -131,6 +147,23 @@ function App() {
     });
   }
 
+  async function handleEditUsername(e) {
+    e.preventDefault();
+    setEditUsernameError("");
+    const uname = editUsernameValue.trim().toLowerCase();
+    if (!uname.match(/^[a-z0-9_]{3,20}$/)) {
+      setEditUsernameError("3–20 characters, letters/numbers/underscores only.");
+      return;
+    }
+    setEditUsernameLoading(true);
+    const { error } = await updateUsername(session.user.id, uname);
+    setEditUsernameLoading(false);
+    if (error) { setEditUsernameError(error.message); return; }
+    await resolveProfile(session.user);
+    setShowEditUsername(false);
+    setEditUsernameValue("");
+  }
+
   // ── Page renderer ─────────────────────────────────────────────
   const PAGE_MAP = {
     home:              () => <HomePage onNavigate={navigate} scoreBook={scoreBook} user={session?.user} onSignInClick={() => setShowAuth(true)} />,
@@ -175,6 +208,35 @@ function App() {
         </div>
       )}
 
+      {/* ── Edit username modal ─────────────────────────────────── */}
+      {showEditUsername && session?.user && (
+        <div className="auth-overlay" onClick={() => setShowEditUsername(false)}>
+          <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="auth-hex-logo">IFT<br /><span>211</span></div>
+            <h3 className="auth-title">Edit Username</h3>
+            <p className="auth-muted">Current: <strong>{profile?.username}</strong></p>
+            <form onSubmit={handleEditUsername} className="auth-form">
+              <div className="auth-field">
+                <label>New Username <span className="auth-field-hint">(shown publicly)</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g. jesutobi001"
+                  value={editUsernameValue}
+                  onChange={(e) => { setEditUsernameValue(e.target.value); setEditUsernameError(""); }}
+                  autoFocus
+                  required
+                />
+              </div>
+              {editUsernameError && <p className="auth-error">{editUsernameError}</p>}
+              <button type="submit" className="auth-btn primary" disabled={editUsernameLoading}>
+                {editUsernameLoading ? "Saving…" : "Update Username →"}
+              </button>
+            </form>
+            <button className="auth-close" onClick={() => setShowEditUsername(false)} aria-label="Close">✕</button>
+          </div>
+        </div>
+      )}
+
       {/* ── Username collection (after Google OAuth) ────────────── */}
       {showAuth && needUsername && session?.user && (
         <AuthModal
@@ -202,6 +264,7 @@ function App() {
         user={session?.user}
         profile={profile}
         onSignInClick={() => setShowAuth(true)}
+        onEditUsername={() => { setEditUsernameValue(profile?.username || ""); setShowEditUsername(true); }}
         onSignOut={() => { setSession(null); setProfile(null); navigate("home"); signOut(); }}
       />
 
