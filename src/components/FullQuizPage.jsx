@@ -10,11 +10,23 @@ const FILTER_LABELS = {
   note2: "Full Quiz — Note Two",
 };
 
+const MAX_QUESTIONS = 60;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function FullQuizPage({ onSaveScore, user }) {
   const [filter, setFilter] = useState("all");
 
   const questions = useMemo(() => {
-    return FULL_QUIZ.filter((q) => filter === "all" || q.module === filter);
+    const pool = FULL_QUIZ.filter((q) => filter === "all" || q.module === filter);
+    return shuffle(pool).slice(0, MAX_QUESTIONS);
   }, [filter]);
 
   function handleScoreSaved(quizKeyStr, pct) {
@@ -38,7 +50,7 @@ function FullQuizPage({ onSaveScore, user }) {
       <div className="section-header">
         <div className="section-tag">Assessment</div>
         <h3>FULL COURSE QUIZ</h3>
-        <p>Mixed Cambridge-style MCQ set across Lecture 1 and combinational notes.</p>
+        <p>60 questions randomly drawn from the full question bank — a fresh set every attempt.</p>
       </div>
 
       <div className="filters">
