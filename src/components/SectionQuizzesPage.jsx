@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { SECTION_QUIZZES } from "../data/courseData";
 import QuizPanel from "./QuizPanel";
+import { syncAttempt } from "../services/supabase";
 
 const SECTION_KEYS = Object.keys(SECTION_QUIZZES);
 
@@ -14,9 +15,25 @@ function sectionLabel(key) {
   return SECTION_LABELS[key] ?? key;
 }
 
-function SectionQuizzesPage({ onSaveScore }) {
+function SectionQuizzesPage({ onSaveScore, user }) {
   const [active, setActive] = useState(SECTION_KEYS[0]);
   const questions = useMemo(() => SECTION_QUIZZES[active].questions, [active]);
+
+  function handleScoreSaved(quizKeyStr, pct) {
+    onSaveScore(quizKeyStr, pct);
+    if (user?.id) {
+      const total = questions.length;
+      const score = Math.round((pct / 100) * total);
+      syncAttempt(user.id, {
+        topicId:    active,
+        topicLabel: `Section Quiz — ${sectionLabel(active)}`,
+        score,
+        total,
+        pct,
+        provider:   "static",
+      }).catch(console.error);
+    }
+  }
 
   return (
     <section className="page active-page">
@@ -42,7 +59,7 @@ function SectionQuizzesPage({ onSaveScore }) {
         key={`section-${active}`}
         questions={questions}
         quizKey={`section_${active}`}
-        onScoreSaved={onSaveScore}
+        onScoreSaved={handleScoreSaved}
       />
     </section>
   );

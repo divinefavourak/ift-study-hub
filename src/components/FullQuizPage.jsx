@@ -1,13 +1,37 @@
 import { useMemo, useState } from "react";
 import { FULL_QUIZ } from "../data/courseData";
 import QuizPanel from "./QuizPanel";
+import { syncAttempt } from "../services/supabase";
 
-function FullQuizPage({ onSaveScore }) {
+const FILTER_LABELS = {
+  all:   "Full Quiz",
+  lec1:  "Full Quiz — Lecture 1",
+  note1: "Full Quiz — Note One",
+  note2: "Full Quiz — Note Two",
+};
+
+function FullQuizPage({ onSaveScore, user }) {
   const [filter, setFilter] = useState("all");
 
   const questions = useMemo(() => {
     return FULL_QUIZ.filter((q) => filter === "all" || q.module === filter);
   }, [filter]);
+
+  function handleScoreSaved(quizKeyStr, pct) {
+    onSaveScore(quizKeyStr, pct);
+    if (user?.id) {
+      const total = questions.length;
+      const score = Math.round((pct / 100) * total);
+      syncAttempt(user.id, {
+        topicId:    `full_${filter}`,
+        topicLabel: FILTER_LABELS[filter] ?? `Full Quiz — ${filter}`,
+        score,
+        total,
+        pct,
+        provider:   "static",
+      }).catch(console.error);
+    }
+  }
 
   return (
     <section className="page active-page">
@@ -48,7 +72,7 @@ function FullQuizPage({ onSaveScore }) {
         key={`full-${filter}`}
         questions={questions}
         quizKey={`full_${filter}`}
-        onScoreSaved={onSaveScore}
+        onScoreSaved={handleScoreSaved}
       />
     </section>
   );
