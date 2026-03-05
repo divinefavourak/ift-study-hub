@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { fetchLeaderboard, subscribeLeaderboard, getInitials, BADGE_DEFS } from "../services/supabase";
+import { fetchLeaderboard, subscribeLeaderboard, BADGE_DEFS } from "../services/supabase";
+import Avatar from "./Avatar";
 
 const TROPHY = ["🥇", "🥈", "🥉"];
 
@@ -91,9 +92,12 @@ export default function LeaderboardPage({ user, profile }) {
             const isMe = row?.id === user?.id;
             return row ? (
               <div key={row.id} className={`lb-podium-card rank-${podiumRank} ${isMe ? "is-me" : ""}`}>
-                <div className="lb-avatar" style={{ background: row.avatar_color }}>
-                  {getInitials(row.full_name || row.username)}
-                </div>
+                <Avatar
+                  avatarId={row.avatar_color}
+                  name={row.full_name || row.username}
+                  size="md"
+                  className="lb-avatar"
+                />
                 <div className="lb-podium-trophy">{TROPHY[podiumRank - 1]}</div>
                 <div className="lb-podium-name">{row.username}</div>
                 <div className="lb-podium-pct" style={{ color: gradeColor(row.avg_pct) }}>
@@ -156,9 +160,12 @@ export default function LeaderboardPage({ user, profile }) {
                       {rank <= 3 ? TROPHY[rank - 1] : <span className="lb-rank-num">#{rank}</span>}
                     </td>
                     <td className="lb-player-cell">
-                      <div className="lb-avatar sm" style={{ background: row.avatar_color }}>
-                        {getInitials(row.full_name || row.username)}
-                      </div>
+                      <Avatar
+                        avatarId={row.avatar_color}
+                        name={row.full_name || row.username}
+                        size="sm"
+                        className="lb-avatar"
+                      />
                       <div>
                         <div className="lb-username">
                           {row.username}

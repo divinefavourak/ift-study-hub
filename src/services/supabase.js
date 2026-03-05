@@ -64,23 +64,23 @@ export async function getProfile(userId) {
  * Creates a profile after Google OAuth.
  * Email and full_name come from the Google token; only username is user-supplied.
  */
-export async function createProfile(userId, { username, fullName, avatarUrl }) {
+export async function createProfile(userId, { username, fullName, avatarUrl, avatarId }) {
   if (!supabase) return { error: { message: "Supabase not configured." } };
   return supabase.from("profiles").insert({
     id: userId,
     username: username.trim().toLowerCase(),
     full_name: fullName || "",
-    avatar_color: randomAvatarColor(),
+    avatar_color: avatarId || randomAvatarColor(),
     avatar_url: avatarUrl || null,
   });
 }
 
-export async function updateUsername(userId, newUsername) {
+export async function updateProfile(userId, { username, avatarId }) {
   if (!supabase) return { error: { message: "Supabase not configured." } };
-  return supabase
-    .from("profiles")
-    .update({ username: newUsername.trim().toLowerCase() })
-    .eq("id", userId);
+  const updates = {};
+  if (username !== undefined) updates.username = username.trim().toLowerCase();
+  if (avatarId  !== undefined) updates.avatar_color = avatarId;
+  return supabase.from("profiles").update(updates).eq("id", userId);
 }
 
 export const BADGE_DEFS = {

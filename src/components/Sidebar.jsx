@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { NAV_ITEMS } from "../data/courseData";
-import { signOut, getInitials, BADGE_DEFS } from "../services/supabase";
+import { BADGE_DEFS } from "../services/supabase";
 import { playHover, playClick } from "../services/audio";
+import Avatar from "./Avatar";
 
 function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInClick, onEditUsername, onSignOut }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,12 +62,11 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
           {user ? (
             <>
               <div className="sidebar-user-row" onClick={() => setShowUserMenu((v) => !v)}>
-                <div
-                  className="sidebar-avatar"
-                  style={{ background: profile?.avatar_color ?? "var(--blue)" }}
-                >
-                  {getInitials(profile?.full_name || profile?.username || user.email)}
-                </div>
+                <Avatar
+                  avatarId={profile?.avatar_color}
+                  name={profile?.full_name || profile?.username || user.email}
+                  size="md"
+                />
                 <div className="sidebar-user-info">
                   <span className="sidebar-user-name">
                     {profile?.username ?? user.email.split("@")[0]}
@@ -123,12 +123,12 @@ function Sidebar({ activePage, onNavigate, progressPct, user, profile, onSignInC
         </div>
         <div className="mobile-header-right">
           {user ? (
-            <div
-              className="sidebar-avatar sm"
-              style={{ background: profile?.avatar_color ?? "var(--blue)" }}
-              onClick={() => setShowUserMenu((v) => !v)}
-            >
-              {getInitials(profile?.full_name || profile?.username || user.email)}
+            <div onClick={() => setShowUserMenu((v) => !v)}>
+              <Avatar
+                avatarId={profile?.avatar_color}
+                name={profile?.full_name || profile?.username || user.email}
+                size="sm"
+              />
             </div>
           ) : (
             <button className="mobile-signin-btn" onClick={onSignInClick}>🔑</button>

@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { signInWithGoogle, createProfile } from "../services/supabase";
+import AvatarPicker from "./AvatarPicker";
+import Avatar from "./Avatar";
+import { PRESET_AVATARS } from "../data/avatars";
 
 /**
  * AuthModal — two states:
@@ -10,6 +13,7 @@ export default function AuthModal({ onClose, needUsername, user, onUsernameSet }
   // If needUsername=true, go straight to the username step
   const [step, setStep] = useState(needUsername ? "username" : "signin");
   const [username, setUsername] = useState("");
+  const [avatarId, setAvatarId] = useState(PRESET_AVATARS[0].id);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,7 +44,7 @@ export default function AuthModal({ onClose, needUsername, user, onUsernameSet }
       user?.email?.split("@")[0] ||
       "";
     const avatarUrl = user?.user_metadata?.avatar_url || null;
-    const { error: err } = await createProfile(user.id, { username: uname, fullName, avatarUrl });
+    const { error: err } = await createProfile(user.id, { username: uname, fullName, avatarUrl, avatarId });
     setLoading(false);
     if (err) { setError(err.message); return; }
     onUsernameSet?.();
@@ -89,11 +93,15 @@ export default function AuthModal({ onClose, needUsername, user, onUsernameSet }
     <div className="auth-overlay">
       <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
         <div className="auth-hex-logo">IFT<br /><span>211</span></div>
-        <h3 className="auth-title">Pick a username</h3>
+        <h3 className="auth-title">Set Up Your Profile</h3>
         <p className="auth-muted">
           Hi <strong>{user?.user_metadata?.given_name || user?.email}</strong>!
-          Choose a username that will appear on the leaderboard.
+          Pick an avatar and a username that will appear on the leaderboard.
         </p>
+
+        <div className="auth-avatar-preview">
+          <Avatar avatarId={avatarId} name={username} size="md" />
+        </div>
 
         <form onSubmit={handleSetUsername} className="auth-form">
           <div className="auth-field">
@@ -107,9 +115,10 @@ export default function AuthModal({ onClose, needUsername, user, onUsernameSet }
               required
             />
           </div>
+          <AvatarPicker selected={avatarId} onSelect={setAvatarId} />
           {error && <p className="auth-error">{error}</p>}
           <button type="submit" className="auth-btn primary" disabled={loading}>
-            {loading ? "Saving…" : "Set Username →"}
+            {loading ? "Saving…" : "Create Profile →"}
           </button>
         </form>
       </div>

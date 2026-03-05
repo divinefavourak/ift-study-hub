@@ -19,7 +19,9 @@ import SplashScreen from "./components/SplashScreen";
 import AuthModal from "./components/AuthModal";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { PAGE_IDS } from "./data/courseData";
-import { onAuthChange, getProfile, getSession, signOut, updateUsername } from "./services/supabase";
+import { onAuthChange, getProfile, getSession, signOut, updateProfile } from "./services/supabase";
+import AvatarPicker from "./components/AvatarPicker";
+import Avatar from "./components/Avatar";
 
 const STORAGE_KEYS = { visited: "ift211_react_visited", scores: "ift211_react_scores" };
 
@@ -49,6 +51,7 @@ function App() {
   const [needUsername, setNeedUsername]     = useState(false);
   const [showEditUsername, setShowEditUsername] = useState(false);
   const [editUsernameValue, setEditUsernameValue] = useState("");
+  const [editAvatarId, setEditAvatarId]           = useState("");
   const [editUsernameError, setEditUsernameError] = useState("");
   const [editUsernameLoading, setEditUsernameLoading] = useState(false);
 
@@ -156,12 +159,16 @@ function App() {
       return;
     }
     setEditUsernameLoading(true);
-    const { error } = await updateUsername(session.user.id, uname);
+    const { error } = await updateProfile(session.user.id, {
+      username: uname,
+      avatarId: editAvatarId || undefined,
+    });
     setEditUsernameLoading(false);
     if (error) { setEditUsernameError(error.message); return; }
     await resolveProfile(session.user);
     setShowEditUsername(false);
     setEditUsernameValue("");
+    setEditAvatarId("");
   }
 
   // ── Page renderer ─────────────────────────────────────────────
@@ -208,28 +215,42 @@ function App() {
         </div>
       )}
 
-      {/* ── Edit username modal ─────────────────────────────────── */}
+      {/* ── Edit profile modal ──────────────────────────────────── */}
       {showEditUsername && session?.user && (
         <div className="auth-overlay" onClick={() => setShowEditUsername(false)}>
           <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
             <div className="auth-hex-logo">IFT<br /><span>211</span></div>
-            <h3 className="auth-title">Edit Username</h3>
-            <p className="auth-muted">Current: <strong>{profile?.username}</strong></p>
+            <h3 className="auth-title">Edit Profile</h3>
+
+            <div className="auth-avatar-preview">
+              <Avatar
+                avatarId={editAvatarId || profile?.avatar_color}
+                name={editUsernameValue || profile?.username || ""}
+                size="md"
+              />
+            </div>
+
             <form onSubmit={handleEditUsername} className="auth-form">
               <div className="auth-field">
-                <label>New Username <span className="auth-field-hint">(shown publicly)</span></label>
+                <label>Username <span className="auth-field-hint">(3–20 chars, letters/numbers/_)</span></label>
                 <input
                   type="text"
-                  placeholder="e.g. jesutobi001"
+                  placeholder={profile?.username || "e.g. jesutobi001"}
                   value={editUsernameValue}
                   onChange={(e) => { setEditUsernameValue(e.target.value); setEditUsernameError(""); }}
                   autoFocus
                   required
                 />
               </div>
+
+              <AvatarPicker
+                selected={editAvatarId || profile?.avatar_color}
+                onSelect={setEditAvatarId}
+              />
+
               {editUsernameError && <p className="auth-error">{editUsernameError}</p>}
               <button type="submit" className="auth-btn primary" disabled={editUsernameLoading}>
-                {editUsernameLoading ? "Saving…" : "Update Username →"}
+                {editUsernameLoading ? "Saving…" : "Save Profile →"}
               </button>
             </form>
             <button className="auth-close" onClick={() => setShowEditUsername(false)} aria-label="Close">✕</button>
@@ -264,7 +285,11 @@ function App() {
         user={session?.user}
         profile={profile}
         onSignInClick={() => setShowAuth(true)}
-        onEditUsername={() => { setEditUsernameValue(profile?.username || ""); setShowEditUsername(true); }}
+        onEditUsername={() => {
+          setEditUsernameValue(profile?.username || "");
+          setEditAvatarId(profile?.avatar_color || "");
+          setShowEditUsername(true);
+        }}
         onSignOut={() => { setSession(null); setProfile(null); navigate("home"); signOut(); }}
       />
 
