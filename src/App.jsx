@@ -22,6 +22,7 @@ import { PAGE_IDS } from "./data/courseData";
 import { onAuthChange, getProfile, getSession, signOut, updateProfile } from "./services/supabase";
 import AvatarPicker from "./components/AvatarPicker";
 import Avatar from "./components/Avatar";
+import { PRESET_AVATARS } from "./data/avatars";
 
 const STORAGE_KEYS = { visited: "ift211_react_visited", scores: "ift211_react_scores" };
 
@@ -84,6 +85,12 @@ function App() {
   async function resolveProfile(user) {
     const p = await getProfile(user.id);
     if (p) {
+      // Migrate legacy hex-colour avatars to a random preset (runs once silently)
+      if (p.avatar_color && !p.avatar_color.startsWith("av_")) {
+        const randomPreset = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
+        await updateProfile(user.id, { avatarId: randomPreset.id });
+        p.avatar_color = randomPreset.id;
+      }
       setProfile(p);
       setNeedUsername(false);
       setShowAuth(false);
