@@ -100,7 +100,7 @@ export default function AuthModal({ onClose, needUsername, user, onUsernameSet }
         </p>
 
         <div className="auth-avatar-preview">
-          <Avatar avatarId={avatarId} name={username} size="md" />
+          <Avatar avatarId={avatarId} name={username} size="lg" />
         </div>
 
         <form onSubmit={handleSetUsername} className="auth-form">

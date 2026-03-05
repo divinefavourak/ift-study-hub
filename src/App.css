@@ -2784,12 +2784,21 @@ body {
   place-items: center;
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
 }
-.avatar-md { width: 36px; height: 36px; }
-.avatar-sm { width: 28px; height: 28px; }
+.avatar-sm { width: 28px;  height: 28px; }
+.avatar-md { width: 36px;  height: 36px; }
+.avatar-lg { width: 72px;  height: 72px; }
 
-.avatar-emoji  { font-size: 1.25rem; line-height: 1; }
-.avatar-sm .avatar-emoji { font-size: 1rem; }
+/* Open Peeps SVG image — slightly over-sized so the face fills the circle */
+.avatar-peep-img {
+  width: 130%;
+  height: 130%;
+  object-fit: cover;
+  object-position: center top;
+  pointer-events: none;
+  display: block;
+}
 
 .avatar-initials {
   font-family: var(--mono);
@@ -2798,7 +2807,9 @@ body {
   color: #fff;
 }
 .avatar-sm .avatar-initials { font-size: 10px; }
+.avatar-lg .avatar-initials { font-size: 22px; }
 
+/* ── Avatar Picker ─────────────────────────────────────────── */
 .avatar-picker { display: flex; flex-direction: column; gap: 8px; }
 
 .avatar-picker-label {
@@ -2819,8 +2830,8 @@ body {
   border-radius: 50%;
   border: 2.5px solid transparent;
   cursor: pointer;
-  display: grid;
-  place-items: center;
+  overflow: hidden;
+  position: relative;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   padding: 0;
   outline: none;
@@ -2837,8 +2848,7 @@ body {
   transform: scale(1.1);
 }
 
-.avatar-option-emoji { font-size: 1.35rem; line-height: 1; pointer-events: none; }
-
+/* Auth modal — avatar preview above form */
 .auth-avatar-preview {
   display: flex;
   justify-content: center;
@@ -2846,12 +2856,9 @@ body {
 }
 
 .auth-avatar-preview .avatar-circle {
-  width: 64px;
-  height: 64px;
   box-shadow: 0 0 0 3px rgba(0,214,255,0.3);
 }
 
-.auth-avatar-preview .avatar-emoji { font-size: 2rem; }
 .auth-avatar-preview .avatar-initials { font-size: 20px; }
 
 /* ============================================================

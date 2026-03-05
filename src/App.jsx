@@ -85,8 +85,8 @@ function App() {
   async function resolveProfile(user) {
     const p = await getProfile(user.id);
     if (p) {
-      // Migrate legacy hex-colour avatars to a random preset (runs once silently)
-      if (p.avatar_color && !p.avatar_color.startsWith("av_")) {
+      // Migrate any non-peep avatar (legacy hex colours or old av_* emoji IDs)
+      if (!p.avatar_color || !p.avatar_color.startsWith("peep_")) {
         const randomPreset = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
         await updateProfile(user.id, { avatarId: randomPreset.id });
         p.avatar_color = randomPreset.id;
@@ -233,7 +233,7 @@ function App() {
               <Avatar
                 avatarId={editAvatarId || profile?.avatar_color}
                 name={editUsernameValue || profile?.username || ""}
-                size="md"
+                size="lg"
               />
             </div>
 

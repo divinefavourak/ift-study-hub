@@ -1,8 +1,9 @@
-import { PRESET_AVATARS } from "../data/avatars";
+import { PRESET_AVATARS, getAvatarUrl } from "../data/avatars";
 
 /**
  * AvatarPicker
- * Shows a grid of preset avatars. Calls onSelect(avatarId) when clicked.
+ * Grid of Open Peeps avatars to choose from.
+ * Calls onSelect(avatarId) when an avatar is clicked.
  */
 export default function AvatarPicker({ selected, onSelect }) {
   return (
@@ -16,9 +17,15 @@ export default function AvatarPicker({ selected, onSelect }) {
             className={`avatar-option ${selected === av.id ? "selected" : ""}`}
             style={{ background: av.bg }}
             onClick={() => onSelect(av.id)}
-            title={av.emoji}
+            aria-label={av.seed}
           >
-            <span className="avatar-option-emoji">{av.emoji}</span>
+            <img
+              src={getAvatarUrl(av.seed)}
+              alt={av.seed}
+              className="avatar-peep-img"
+              draggable={false}
+              loading="lazy"
+            />
           </button>
         ))}
       </div>
